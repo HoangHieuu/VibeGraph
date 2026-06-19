@@ -1,0 +1,291 @@
+@import "tailwindcss";
+
+:root {
+  color: #f3f5f4;
+  background: #111416;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #111416;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #111416;
+}
+
+.app-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  height: 72px;
+  align-items: center;
+  gap: 32px;
+  padding: 0 32px;
+  border-bottom: 1px solid #292e31;
+  background: #121517;
+}
+
+.wordmark {
+  font-size: 20px;
+  font-weight: 680;
+  letter-spacing: -0.025em;
+}
+
+.header-divider {
+  width: 1px;
+  height: 32px;
+  background: #363c3f;
+}
+
+.workspace-label {
+  color: #969da0;
+  font-size: 16px;
+  font-weight: 450;
+}
+
+.canvas {
+  position: relative;
+  display: grid;
+  min-height: calc(100vh - 72px);
+  place-items: center;
+  isolation: isolate;
+  background-color: #15191b;
+  background-image: radial-gradient(#2d3336 0.7px, transparent 0.7px);
+  background-size: 22px 22px;
+}
+
+.canvas::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(8, 11, 12, 0.2);
+  content: "";
+  pointer-events: none;
+}
+
+.graph-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  opacity: 0.46;
+}
+
+.graph-backdrop line {
+  stroke: #3a4246;
+  stroke-width: 0.08;
+}
+
+.graph-backdrop rect {
+  fill: #181d1f;
+  stroke: #687175;
+  stroke-width: 0.08;
+}
+
+.graph-backdrop path {
+  fill: none;
+  stroke: #778084;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 0.12;
+}
+
+.runtime-panel {
+  width: min(440px, calc(100vw - 40px));
+  padding: 30px 30px 24px;
+  border: 1px solid #667074;
+  border-radius: 8px;
+  background: rgba(22, 26, 28, 0.95);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+}
+
+.runtime-panel h1 {
+  margin: 0;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #41484b;
+  font-size: 27px;
+  font-weight: 660;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.runtime-status {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 18px;
+  align-items: start;
+  padding: 28px 20px 24px;
+  border-bottom: 1px solid #41484b;
+}
+
+.status-orb {
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: #6e777a;
+}
+
+.status-orb--connected {
+  background: #5ee6b2;
+  box-shadow: 0 0 0 4px rgba(94, 230, 178, 0.08);
+}
+
+.status-orb--loading {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.status-orb--disconnected {
+  background: #ff8275;
+}
+
+.status-title,
+.status-endpoint,
+.status-detail {
+  margin: 0;
+}
+
+.status-title {
+  color: #c4cbce;
+  font-size: 21px;
+  font-weight: 590;
+  line-height: 1.25;
+}
+
+.status-title--connected {
+  color: #5ee6b2;
+}
+
+.status-title--disconnected {
+  color: #ff9b91;
+}
+
+.status-endpoint {
+  margin-top: 4px;
+  color: #9aa1a4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+}
+
+.status-detail {
+  max-width: 300px;
+  margin-top: 10px;
+  color: #c2c8ca;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.check-button {
+  display: block;
+  min-width: 156px;
+  margin: 22px auto 0;
+  padding: 11px 18px;
+  border: 1px solid #5ee6b2;
+  border-radius: 4px;
+  color: #6ee9ba;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 560;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.check-button:hover:not(:disabled),
+.check-button:focus-visible {
+  color: #0f1714;
+  background: #5ee6b2;
+  outline: none;
+}
+
+.check-button:disabled {
+  border-color: #50585b;
+  color: #7f878a;
+  cursor: wait;
+}
+
+.offline-note {
+  position: absolute;
+  bottom: 28px;
+  left: 32px;
+  margin: 0;
+  color: #8a9295;
+  font-size: 14px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    height: 64px;
+    gap: 18px;
+    padding: 0 20px;
+  }
+
+  .header-divider {
+    height: 26px;
+  }
+
+  .workspace-label {
+    font-size: 14px;
+  }
+
+  .canvas {
+    min-height: calc(100vh - 64px);
+  }
+
+  .runtime-panel {
+    padding: 26px 22px 22px;
+  }
+
+  .runtime-status {
+    padding-inline: 4px;
+  }
+
+  .offline-note {
+    bottom: 20px;
+    left: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
