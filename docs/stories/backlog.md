@@ -1,13 +1,29 @@
-# Story Backlog
+# VibeGraph Story Backlog
 
-This backlog will be populated after a user provides a project spec or selects a
-specific initiative.
-
-Do not create every possible story packet up front. Create story packets when
-the work is selected or when a product decision needs a durable place to land.
+Only Phase 0 is selected for implementation. Later epics remain unsliced until
+their work is selected.
 
 ## Candidate Epics
 
 | Epic | Description | Status |
 | --- | --- | --- |
-| TBD | Add candidate epics after spec intake | unsliced |
+| E00 | Project foundation and stable generated-output boundary | selected |
+| E01 | Scanner, language parsing, import resolution, graph JSON | unsliced |
+| E02 | Interactive graph dashboard and file inspection | unsliced |
+| E03 | Context pack ranking, offline heuristics, provider enhancement | unsliced |
+| E04 | Deterministic and provider-enhanced README generation | unsliced |
+| E05 | Realtime watcher and dependency warnings | unsliced |
+| E06 | npm packaging, landing page, demo repo, submission | unsliced |
+
+## Selected Stories
+
+| Story | Title | Lane | Status |
+| --- | --- | --- | --- |
+| US-001 | Local development foundation | normal | implemented |
+| US-002 | Stable output directory | normal | planned |
+
+## Future Slicing Rule
+
+Select the next epic only after the current slice has recorded proof. New story
+packets must reference the living product contracts rather than copying
+acceptance criteria from `SPEC.md` without reconciliation.

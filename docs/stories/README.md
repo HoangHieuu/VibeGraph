@@ -3,7 +3,9 @@
 Stories are work packets. They turn product intent into bounded implementation
 and validation work.
 
-No story packets are active yet.
+Phase 0 is selected with two planned story packets under
+`docs/stories/epics/E00-foundation/`. Later epics remain unsliced in
+`docs/stories/backlog.md`.
 
 ## Normal Story
 
