@@ -1,133 +1,121 @@
-# Architecture
+# VibeGraph Architecture
 
-No application stack is selected yet.
+## Product Surfaces
 
-No application code exists yet. This document defines generic architecture
-questions and boundary rules that future implementation should adapt after a
-user-provided spec and stack decision exist.
+VibeGraph has two user-facing entry points:
 
-## Discovery Before Shape
+- A Node/npm CLI launched from a project directory.
+- A local React dashboard served by the VibeGraph runtime.
 
-Before proposing implementation shape, identify:
+The CLI is the public launcher. The dashboard is the primary interactive
+surface. The Python backend is an internal local service.
 
-- Product surfaces: browser, mobile, desktop, CLI, API, worker, or service.
-- Runtime stack: language, framework, database, queues, providers, and hosting.
-- Core domains: the product concepts that deserve stable names and contracts.
-- Boundary inputs: user input, API requests, webhooks, jobs, files, credentials,
-  provider payloads, and environment configuration.
-- Validation ladder: the smallest checks that can prove the selected stack.
+## Workspace Shape
 
-Record stack choices in `docs/decisions/` when they meaningfully constrain
-future work.
+```text
+cli/
+  src/
+    arguments/
+    runtime/
+    commands/
 
-## Default Layering
+backend/
+  app/
+    domain/
+    application/
+    infrastructure/
+    interface/
+
+frontend/
+  src/
+    api/
+    components/
+    features/
+    graph/
+    state/
+```
+
+This is the target boundary, not permission to create every folder before a
+story needs it.
+
+## Runtime Flow
+
+```text
+npx command
+  -> resolve project path and CLI options
+  -> start local Python backend
+  -> backend scans and writes graph artifacts
+  -> start or serve React dashboard
+  -> optionally open local browser
+  -> watcher refreshes graph and warnings
+  -> dashboard receives REST/WebSocket updates
+```
+
+## Backend Layers
 
 ```text
 domain
   <- application
       <- infrastructure
           <- interface
-              <- app surfaces
 ```
 
-## Candidate Structure
+- Domain: file records, import references, graph records, warnings, ranking
+  rules, and generated-document models.
+- Application: scan, graph, rescan, context-pack, README, and warning use cases.
+- Infrastructure: filesystem, parsers, NetworkX, Watchdog, and LLM clients.
+- Interface: FastAPI routes, WebSocket events, DTO parsing, and presenters.
+
+Inner layers must not depend on FastAPI, Watchdog, NetworkX concrete objects,
+provider clients, environment variables, or frontend state.
+
+## Frontend Boundaries
+
+- API clients own backend transport and response parsing.
+- Feature modules own search, inspection, filtering, context, README, and
+  warning behavior.
+- Graph rendering adapts product graph models to `react-force-graph-2d`.
+- Components do not read generated files directly from the user's filesystem.
+
+## CLI Boundaries
+
+- Argument parsing produces a typed launch configuration.
+- Runtime orchestration owns child-process lifecycle and signal forwarding.
+- The CLI communicates with the backend through documented startup and health
+  contracts, not backend internal imports.
+- Packaging must preserve the public `npx vibegraph@latest .` contract.
+
+## Parse-First Rule
+
+Unknown data is parsed before entering inner code:
 
 ```text
-app/
-  domain/
-    entities/
-    value-objects/
-    repositories/
-    services/
-
-  application/
-    commands/
-    queries/
-    handlers/
-
-  infrastructure/
-    database/
-    logging/
-    notifications/
-
-  interface/
-    controllers/
-    dto/
-    presenters/
-    routes/
-    middlewares/
-
-surfaces/
-  browser/
-  mobile/
-  desktop/
-  cli/
-```
-
-This is a thinking template, not a scaffold. Create real folders only when a
-story enters implementation and the selected stack needs them.
-
-## Dependency Rule
-
-Inner layers must not depend on outer layers.
-
-| Layer | May depend on | Must not depend on |
-| --- | --- | --- |
-| domain | nothing project-external except tiny pure utilities | framework, database, UI, provider, process/env |
-| application | domain | framework, UI, provider, database concrete clients |
-| infrastructure | domain, application | interface controllers or UI |
-| interface | all backend layers | UI state or platform shell assumptions |
-| app surfaces | API contracts and app-facing clients | domain internals directly |
-
-## Parse-First Boundary Rule
-
-Unknown data must be parsed at boundaries before it enters inner code.
-
-Boundaries include:
-
-- HTTP request bodies, params, and query strings.
-- Session payloads and identity claims.
-- Environment variables.
-- Database rows returned from external clients.
-- Platform shell payloads.
-- Deep links, tokens, and signed URLs.
-- Provider webhooks, events, and async payloads.
-
-Target flow:
-
-```text
-unknown input
-  -> parser
-  -> typed DTO or command
+CLI args / HTTP payload / environment / parser output / provider response
+  -> boundary parser
+  -> typed DTO or configuration
   -> application use case
-  -> domain object/value object
+  -> domain model
 ```
 
-Inner layers should work with meaningful product types such as `UserId`,
-`AccountId`, `WorkspaceId`, `Role`, `DateRange`, or domain-specific IDs,
-rather than repeatedly validating raw strings.
+## Data and Artifact Ownership
 
-## Command/Query Boundary
+VibeGraph has no application database in the MVP. Generated artifacts live
+under the analyzed project's `.vibegraph/` directory.
 
-If the product has both reads and writes, keep command/query separation clear at
-the code level even when the storage layer is simple:
+The backend is the sole writer of graph, warning, context, and generated README
+artifacts. The frontend reads through the API.
 
-- Commands mutate state and own audit side effects.
-- Queries read state and format for consumers.
-- Shared domain rules live in domain/application, not controllers.
+## Observability
 
-## Observability Contract
+The backend emits one canonical JSON log line per request with timestamp,
+level, request ID, action, duration, status code, and message. Project source
+paths should be repository-relative in routine logs.
 
-The future server should emit one canonical JSON log line per request with:
+Provider errors, parser uncertainty, and unresolved imports are explicit
+operational or product states. They are not silently discarded.
 
-- timestamp
-- level
-- request_id
-- user_id when known
-- action
-- duration_ms
-- status_code
-- message
+## Security and Privacy Boundary
 
-Audit logs are product records. Application logs are operational records. Do not
-use one as a substitute for the other.
+Repository scanning is local. Provider calls receive structured, task-relevant
+graph context rather than the entire repository by default. API keys remain in
+environment configuration and must never be written under `.vibegraph/`.

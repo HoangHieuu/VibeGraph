@@ -1,7 +1,7 @@
 # Harness
 
-The project goal is to provide a reusable operating harness that lets humans and
-agents turn a future product spec into safe, validated work.
+The project uses a reusable operating harness to turn the accepted VibeGraph
+specification and future change requests into safe, validated work.
 
 The app is what users touch. The harness is what agents touch.
 
@@ -54,31 +54,29 @@ Every task has two possible outputs:
 2. Harness delta: docs, templates, validation expectations, backlog items, or
    decision records that make the next task easier.
 
-## Harness v0 Scope
+## Harness Foundation and Current Project State
 
-Harness v0 includes:
+The original Harness v0 foundation supplied:
 
 - Agent entrypoint.
-- Empty product documentation structure.
+- Product documentation structure.
 - Feature intake and risk lanes.
 - Story templates.
 - Decision log template.
 - Validation report template.
-- Test matrix placeholder.
+- Test matrix.
 - Harness growth backlog.
 - Durable layer: SQLite database and CLI for operational records.
 
-Harness v0 deliberately excludes:
+VibeGraph has now added:
 
-- A project-specific `SPEC.md`.
-- Pre-sliced product domains.
-- A locked application stack.
-- App source scaffolding.
-- Package scripts.
-- Test runner config.
-- CI workflows.
+- An accepted `SPEC.md`.
+- Living product contracts under `docs/product/`.
+- Locked workspace and runtime boundaries.
+- Phase 0 story packets and planned validation rows.
 
-Those should arrive only when a selected story needs them.
+Application source scaffolding, package scripts, test-runner configuration, and
+CI workflows remain absent. They should arrive only through selected stories.
 
 ## Durable Layer
 
