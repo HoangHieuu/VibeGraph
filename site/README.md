@@ -20,5 +20,8 @@ pnpm --filter @vibegraph/site build
 
 ## Vercel
 
-Create a Vercel project from the main repository and set the Root Directory to
-`site`. Vercel will use `site/vercel.json` and publish `site/dist`.
+Production URL:
+
+https://vibegraph-hoanghieudev.vercel.app
+
+The Vercel project uses `site/vercel.json` and publishes `site/dist`.

@@ -45,7 +45,7 @@ npm install command without unverified claims.
 | Integration | Production build |
 | E2E | Desktop and mobile section/interaction QA |
 | Platform | Static Vite output suitable for Vercel |
-| Release | Public deployment after repository handoff |
+| Release | Public Vercel deployment |
 
 ## Harness Delta
 
@@ -59,3 +59,7 @@ No new process rule expected.
 - The install-copy interaction changed from `Copy` to `Copied`.
 - Browser console reported zero warnings and errors after the favicon fix.
 - Vercel configuration is present under `site/vercel.json`.
+- Production deployment is ready at
+  `https://vibegraph-hoanghieudev.vercel.app`.
+- The production URL returns HTTP 200 and serves the VibeGraph landing-page
+  metadata and compiled React assets.

@@ -10,7 +10,7 @@
 | 3 | Context packs and offline/provider behavior |
 | 4 | README generation and Mermaid output |
 | 5 | Watcher and dependency warnings |
-| 6 | In progress: npm publication, Ubuntu/Windows proof, demo repository, and landing page implemented; public deployment and submission URLs remain |
+| 6 | In progress: npm publication, Ubuntu/Windows proof, demo repository, and public landing page implemented; submission URLs remain |
 
 Only the selected phase should be decomposed into active story packets. Later
 phases remain backlog candidates until selected.
