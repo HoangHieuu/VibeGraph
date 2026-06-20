@@ -37,6 +37,9 @@ implemented locally:
   backend.
 - First-run isolated Python environment bootstrap with cached reuse.
 - Single-port production dashboard, API, and WebSocket runtime.
+- Cross-platform GitHub Actions proof on Ubuntu and Windows.
+- FastAPI/React authentication demo repository under `demo/`.
+- Deployable React/Vite landing page under `site/`.
 
 ## Product Contracts
 
@@ -143,12 +146,24 @@ conflicting with the unrelated unscoped registry package. VibeGraph is
 MIT-licensed and authored by
 [vibedev](https://github.com/HoangHieuu).
 
+Run the release demo validation:
+
+```bash
+pnpm demo:check
+```
+
+Start the landing page:
+
+```bash
+pnpm site:dev
+```
+
 ## Current Work
 
-Phases 0 through 5 are complete. Phase 6 is in progress: local npm artifact
-packaging and fresh-environment launch proof are implemented. Remaining work is
-public registry publication, platform smoke tests, the demo repository,
-landing page, and submission polish.
+Phases 0 through 5 are complete. Phase 6 now includes local npm packaging,
+fresh-environment launch proof, Ubuntu/Windows CI, the demo repository, and the
+landing page. Remaining work is public registry publication, public deployment,
+and submission URLs/polish.
 
 See [the story backlog](docs/stories/backlog.md) and
 [test matrix](docs/TEST_MATRIX.md) for current status.

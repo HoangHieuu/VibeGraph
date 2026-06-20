@@ -73,7 +73,10 @@ dispatch for release-candidate verification.
   its module URL with `fileURLToPath`, uses the Windows shell only for npm
   installation, and launches the packaged JavaScript entry through Node
   instead of directly spawning an unsupported `.cmd` shim.
-- The next remote GitHub Actions run remains required before claiming complete
-  Windows/Linux proof. Public npm publication also remains open, so the story
-  stays `in_progress`. The owner selected `@vibedev/vibegraph`, visible author
-  `vibedev`, and the MIT license.
+- Remote GitHub Actions run
+  `https://github.com/HoangHieuu/VibeGraph/actions/runs/27865202454`
+  passed the full check, package, and packaged-runtime smoke sequence on both
+  Ubuntu and Windows.
+- The packaging and bundled-runtime story is implemented. Public npm
+  publication remains separate release work. The owner selected
+  `@vibedev/vibegraph`, visible author `vibedev`, and the MIT license.
