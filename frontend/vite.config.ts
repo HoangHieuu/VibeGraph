@@ -1,20 +1,31 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig, loadEnv } from "vite";
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-  server: {
-    strictPort: true,
-    proxy: {
-      "/api": {
-        target: "http://127.0.0.1:8000",
-        changeOrigin: true,
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, "..", "");
+  const port = Number(process.env.VITE_PORT || environment.VITE_PORT || 5173);
+  const backendUrl =
+    process.env.VITE_BACKEND_URL ||
+    environment.VITE_BACKEND_URL ||
+    "http://127.0.0.1:8000";
+
+  return {
+    plugins: [react(), tailwindcss()],
+    server: {
+      port,
+      strictPort: true,
+      proxy: {
+        "/api": {
+          target: backendUrl,
+          changeOrigin: true,
+        },
+        "/ws": {
+          target: backendUrl.replace(/^http/, "ws"),
+          changeOrigin: true,
+          ws: true,
+        },
       },
     },
-  },
-  test: {
-    environment: "jsdom",
-    setupFiles: "./src/test/setup.ts",
-  },
+  };
 });
