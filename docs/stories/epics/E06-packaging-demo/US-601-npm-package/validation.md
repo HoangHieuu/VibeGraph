@@ -62,6 +62,9 @@ dispatch for release-candidate verification.
 - Local workflow-equivalent verification passed after the CI addition:
   `uv sync --project backend --locked`, `pnpm check`, `pnpm package`, and
   `pnpm test:package`; the fresh packaged graph completed in 9587 ms.
+- The first remote run failed during job setup because `astral-sh/setup-uv`
+  does not publish a floating `v8` tag. The workflow now pins the verified
+  `v8.2.0` commit SHA.
 - The first remote GitHub Actions run remains required before claiming
   Windows/Linux proof. Public npm publication also remains open, so the story
   stays `in_progress`. The owner selected `@vibedev/vibegraph`, visible author
