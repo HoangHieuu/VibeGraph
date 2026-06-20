@@ -41,7 +41,7 @@ dispatch for release-candidate verification.
 
 - `pnpm check` passed with 31 backend, 12 CLI, and 21 frontend tests plus
   production builds.
-- `pnpm package` produces the scoped `@vibedev/vibegraph` npm tarball under
+- `pnpm package` produces the scoped `@hoanghieudev/vibegraph` npm tarball under
   `dist/`.
 - npm dry-run inspection reported 35 package entries, 145824 compressed bytes,
   and 482143 unpacked bytes, including the CLI, backend, and frontend.
@@ -79,4 +79,4 @@ dispatch for release-candidate verification.
   Ubuntu and Windows.
 - The packaging and bundled-runtime story is implemented. Public npm
   publication remains separate release work. The owner selected
-  `@vibedev/vibegraph`, visible author `vibedev`, and the MIT license.
+  `@hoanghieudev/vibegraph`, visible author `vibedev`, and the MIT license.

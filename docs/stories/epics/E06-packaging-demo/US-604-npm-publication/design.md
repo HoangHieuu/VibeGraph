@@ -3,7 +3,7 @@
 ## Registry Contract
 
 ```text
-package: @vibedev/vibegraph
+package: @hoanghieudev/vibegraph
 version: 0.1.0
 access: public
 tag: latest

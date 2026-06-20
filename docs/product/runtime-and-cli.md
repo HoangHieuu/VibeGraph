@@ -5,17 +5,17 @@
 Primary command:
 
 ```bash
-npx @vibedev/vibegraph@latest .
+npx @hoanghieudev/vibegraph@latest .
 ```
 
 Supported options:
 
 ```bash
-npx @vibedev/vibegraph@latest ./path-to-project
-npx @vibedev/vibegraph@latest . --port 8732
-npx @vibedev/vibegraph@latest . --no-open
-npx @vibedev/vibegraph@latest . --rescan
-npx @vibedev/vibegraph@latest . --model deepseek/deepseek-v4-flash
+npx @hoanghieudev/vibegraph@latest ./path-to-project
+npx @hoanghieudev/vibegraph@latest . --port 8732
+npx @hoanghieudev/vibegraph@latest . --no-open
+npx @hoanghieudev/vibegraph@latest . --rescan
+npx @hoanghieudev/vibegraph@latest . --model deepseek/deepseek-v4-flash
 ```
 
 The CLI must validate the target path, start the local runtime, print the
@@ -65,7 +65,7 @@ In packaged mode, FastAPI serves the dashboard, REST API, and WebSocket from
 the requested dashboard port. A development checkout without bundled runtime
 assets continues to use the monorepo `pnpm dev` flow.
 
-The public npm package is `@vibedev/vibegraph`, and it exposes the fixed
+The public npm package is `@hoanghieudev/vibegraph`, and it exposes the fixed
 `vibegraph` executable. The visible project author is `vibedev`, and the
 repository is released under the MIT license.
 

@@ -25,7 +25,7 @@ npm install command without unverified claims.
 - The page lives under `site/` as a React/Vite application.
 - It includes hero, workflow, product capabilities, privacy, demo, install CTA,
   and footer sections.
-- The install command is `npx @vibedev/vibegraph@latest .`.
+- The install command is `npx @hoanghieudev/vibegraph@latest .`.
 - GitHub links target `https://github.com/HoangHieuu/VibeGraph`.
 - Devpost and video links are omitted until real URLs exist.
 - Desktop and mobile browser QA pass without console errors.

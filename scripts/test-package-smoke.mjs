@@ -71,7 +71,7 @@ const port = await reservePort();
 const executable = join(
   installRoot,
   "node_modules",
-  "@vibedev",
+  "@hoanghieudev",
   "vibegraph",
   "dist",
   "index.js",

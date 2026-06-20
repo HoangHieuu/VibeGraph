@@ -84,7 +84,7 @@ provider clients, environment variables, or frontend state.
 - The CLI communicates with the backend through documented startup and health
   contracts, not backend internal imports.
 - Packaging must preserve the public
-  `npx @vibedev/vibegraph@latest .` contract and `vibegraph` executable.
+  `npx @hoanghieudev/vibegraph@latest .` contract and `vibegraph` executable.
 
 ## Parse-First Rule
 

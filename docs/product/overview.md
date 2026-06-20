@@ -33,7 +33,7 @@ VibeGraph addresses:
 
 A builder can:
 
-1. Run `npx @vibedev/vibegraph@latest .`.
+1. Run `npx @hoanghieudev/vibegraph@latest .`.
 2. View the repository as a live file-level import graph.
 3. Inspect a file and its dependencies.
 4. request a graph-aware context pack for a coding task.

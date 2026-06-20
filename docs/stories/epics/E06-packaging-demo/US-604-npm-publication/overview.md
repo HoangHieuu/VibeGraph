@@ -3,12 +3,13 @@
 ## Current Behavior
 
 The scoped npm artifact is fully packaged and validated locally and on Ubuntu,
-Windows, and macOS, but `@vibedev/vibegraph` is not published.
+Windows, and macOS, but `@hoanghieudev/vibegraph` is not published.
 
 ## Target Behavior
 
-Version `0.1.0` is published publicly under the authenticated `vibedev` npm
-scope and the documented `npx @vibedev/vibegraph@latest .` command resolves.
+Version `0.1.0` is published publicly under the authenticated `hoanghieudev`
+npm scope and the documented `npx @hoanghieudev/vibegraph@latest .` command
+resolves.
 
 ## Affected Users
 

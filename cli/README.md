@@ -8,7 +8,7 @@ This package requires Node.js 22+ and Python 3.11+. Its first launch creates an
 isolated Python environment in the user's cache.
 
 ```bash
-npx @vibedev/vibegraph@latest . --no-open
+npx @hoanghieudev/vibegraph@latest . --no-open
 ```
 
 The package exposes the shorter `vibegraph` executable when installed.

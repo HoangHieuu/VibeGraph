@@ -9,7 +9,7 @@ the smallest useful set of files for an AI coding task.
 The target launch experience is:
 
 ```bash
-npx @vibedev/vibegraph@latest .
+npx @hoanghieudev/vibegraph@latest .
 ```
 
 ## Project Status
@@ -141,7 +141,7 @@ pnpm test:package
 ```
 
 The tarball is written under `dist/`. The selected public package is
-`@vibedev/vibegraph`, which preserves the `vibegraph` executable without
+`@hoanghieudev/vibegraph`, which preserves the `vibegraph` executable without
 conflicting with the unrelated unscoped registry package. VibeGraph is
 MIT-licensed and authored by
 [vibedev](https://github.com/HoangHieuu).

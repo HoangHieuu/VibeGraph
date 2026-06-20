@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export const INSTALL_COMMAND = "npx @vibedev/vibegraph@latest .";
+export const INSTALL_COMMAND = "npx @hoanghieudev/vibegraph@latest .";
 
 interface InstallCommandProps {
   prominent?: boolean;

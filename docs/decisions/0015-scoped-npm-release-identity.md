@@ -18,14 +18,14 @@ publication.
 Publish the CLI as:
 
 ```text
-@vibedev/vibegraph
+@hoanghieudev/vibegraph
 ```
 
 The package continues to expose the `vibegraph` executable, so global or local
 install users retain the short command. The public one-shot command is:
 
 ```bash
-npx @vibedev/vibegraph@latest .
+npx @hoanghieudev/vibegraph@latest .
 ```
 
 Release metadata:
@@ -54,9 +54,9 @@ Positive:
 Tradeoffs:
 
 - The one-shot `npx` command is longer than the original specification.
-- Publishing requires npm access to the `vibedev` scope.
+- Publishing requires npm access to the `hoanghieudev` scope.
 
 ## Follow-Up
 
-- Confirm `vibedev` npm authentication and publish access.
+- Confirm `hoanghieudev` npm authentication and publish access.
 - Update landing-page and demo copy to use the scoped command.
