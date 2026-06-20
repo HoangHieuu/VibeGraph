@@ -30,6 +30,7 @@ unsliced until their work is selected.
 | US-602 | Demo repository | normal | implemented |
 | US-603 | Landing page | normal | implemented |
 | US-604 | Public npm publication | high-risk | implemented |
+| US-605 | Project story audit | normal | implemented |
 
 ## Future Slicing Rule
 
