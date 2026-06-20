@@ -5,12 +5,14 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "dev": "concurrently --kill-others --names backend,frontend --prefix-colors blue,green \"pnpm dev:backend\" \"pnpm dev:frontend\"",
-    "dev:backend": "uv --directory backend --cache-dir .uv-cache run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:backend": "uv --cache-dir backend/.uv-cache run --project backend uvicorn --env-file .env --app-dir backend app.main:app --reload --host 127.0.0.1 --port 8000",
     "dev:frontend": "pnpm --filter @vibegraph/frontend dev",
-    "build": "pnpm --filter @vibegraph/cli build && pnpm --filter @vibegraph/frontend build",
-    "typecheck": "pnpm --filter @vibegraph/cli typecheck && pnpm --filter @vibegraph/frontend typecheck",
-    "test": "uv --directory backend --cache-dir .uv-cache run pytest && pnpm --filter @vibegraph/cli test && pnpm --filter @vibegraph/frontend test",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
+    "build": "pnpm --filter @vibegraph/frontend build && pnpm --filter @vibedev/vibegraph build",
+    "typecheck": "pnpm --filter @vibedev/vibegraph typecheck && pnpm --filter @vibegraph/frontend typecheck",
+    "test": "uv --cache-dir backend/.uv-cache run --project backend pytest -c backend/pyproject.toml && pnpm --filter @vibedev/vibegraph test && pnpm --filter @vibegraph/frontend test",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "package": "pnpm build && pnpm --dir cli pack --pack-destination ../dist",
+    "test:package": "node scripts/test-package-smoke.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

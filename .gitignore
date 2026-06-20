@@ -21,6 +21,12 @@ node_modules/
 __pycache__/
 .pytest_cache/
 *.py[cod]
+*.egg-info/
+
+# Local provider credentials.
+.env
+.env.*
+!.env.example
 
 # VibeGraph generated output.
 .vibegraph/
