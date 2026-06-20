@@ -29,7 +29,7 @@ unsliced until their work is selected.
 | US-601 | Installable npm package and bundled local runtime | high-risk | implemented |
 | US-602 | Demo repository | normal | implemented |
 | US-603 | Landing page | normal | implemented |
-| US-604 | Public npm publication | high-risk | in_progress |
+| US-604 | Public npm publication | high-risk | implemented |
 
 ## Future Slicing Rule
 

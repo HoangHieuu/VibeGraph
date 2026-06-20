@@ -2,8 +2,8 @@
 
 ## Current Behavior
 
-The scoped npm artifact is fully packaged and validated locally and on Ubuntu,
-Windows, and macOS, but `@hoanghieudev/vibegraph` is not published.
+The scoped npm artifact is published publicly as
+`@hoanghieudev/vibegraph@0.1.0`.
 
 ## Target Behavior
 

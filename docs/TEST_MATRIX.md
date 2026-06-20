@@ -27,7 +27,7 @@ This file maps accepted product behavior to planned or recorded proof. A
 | US-601 | Packed npm CLI bundles the dashboard/backend, bootstraps isolated Python, and launches outside the monorepo | yes | yes | yes | yes | implemented | `pnpm check`; `pnpm package`; macOS tarball and browser QA passed; GitHub Actions run 27865202454 passed full checks and packaged-runtime smoke tests on Ubuntu and Windows |
 | US-602 | Demo repository exercises the auth graph, warning, context, and README workflow | yes | yes | yes | yes | implemented | `pnpm demo:check`; 18-file live scan; intentional missing-symbol warning; required auth context files; generated README artifact |
 | US-603 | Landing page explains and links the verified VibeGraph workflow | yes | yes | yes | yes | implemented | Site typecheck/test/build; desktop 1280x720 and 1536x1024 QA; mobile 390x844 QA; copy interaction; clean console |
-| US-604 | Public npm package resolves and launches through the scoped npx command | no | yes | no | no | in_progress | Renamed to @hoanghieudev/vibegraph; full checks, package smoke, and publish dry-run passed; live publish reached npm but requires a 2FA code or granular publish token |
+| US-604 | Public npm package resolves and launches through the scoped npx command | no | yes | yes | yes | implemented | Public `@hoanghieudev/vibegraph@0.1.0` resolves under the `latest` tag; a fresh `npx` launch served healthy graph and dashboard APIs |
 
 ## Future Validation Map
 

@@ -162,8 +162,9 @@ pnpm site:dev
 
 Phases 0 through 5 are complete. Phase 6 now includes local npm packaging,
 fresh-environment launch proof, Ubuntu/Windows CI, the demo repository, and the
-landing page. Remaining work is public registry publication, public deployment,
-and submission URLs/polish.
+landing page. Version `0.1.0` is publicly available as
+`@hoanghieudev/vibegraph`. Remaining work is public deployment and submission
+URLs/polish.
 
 See [the story backlog](docs/stories/backlog.md) and
 [test matrix](docs/TEST_MATRIX.md) for current status.

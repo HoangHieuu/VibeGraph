@@ -77,6 +77,13 @@ dispatch for release-candidate verification.
   `https://github.com/HoangHieuu/VibeGraph/actions/runs/27865202454`
   passed the full check, package, and packaged-runtime smoke sequence on both
   Ubuntu and Windows.
+- After the public-scope rename, run
+  `https://github.com/HoangHieuu/VibeGraph/actions/runs/27866542504`
+  completed all Windows functional checks but exceeded the 30-second graph
+  assertion because that timer incorrectly included the one-time Python
+  dependency bootstrap. The smoke test now records bootstrap duration
+  separately and applies the existing 30-second target after the runtime is
+  ready.
 - The packaging and bundled-runtime story is implemented. Public npm
   publication remains separate release work. The owner selected
   `@hoanghieudev/vibegraph`, visible author `vibedev`, and the MIT license.

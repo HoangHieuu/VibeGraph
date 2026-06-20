@@ -78,6 +78,7 @@ const executable = join(
 );
 let output = "";
 const launchStartedAt = Date.now();
+let runtimeReadyAt;
 const child = spawn(
   process.execPath,
   [executable, projectRoot, "--port", String(port), "--no-open"],
@@ -91,7 +92,15 @@ const child = spawn(
   },
 );
 child.stdout.on("data", (chunk) => {
-  output += chunk.toString();
+  const text = chunk.toString();
+  output += text;
+  if (
+    runtimeReadyAt === undefined &&
+    (text.includes("[INFO] Python runtime ready:") ||
+      text.includes("[INFO] Reusing Python runtime:"))
+  ) {
+    runtimeReadyAt = Date.now();
+  }
   process.stdout.write(chunk);
 });
 child.stderr.on("data", (chunk) => {
@@ -102,7 +111,12 @@ child.stderr.on("data", (chunk) => {
 try {
   const health = await waitForJson(`http://127.0.0.1:${port}/api/health`, 180_000);
   const graph = await waitForJson(`http://127.0.0.1:${port}/api/graph`, 30_000);
-  const firstGraphMilliseconds = Date.now() - launchStartedAt;
+  const graphReadyAt = Date.now();
+  const bootstrapMilliseconds = graphReadyAt - launchStartedAt;
+  if (runtimeReadyAt === undefined) {
+    throw new Error("The CLI did not report that the Python runtime was ready.");
+  }
+  const firstGraphMilliseconds = graphReadyAt - runtimeReadyAt;
   const frontend = await fetch(`http://127.0.0.1:${port}/`).then((response) =>
     response.text(),
   );
@@ -137,7 +151,7 @@ try {
     throw new Error("The packaged runtime did not write the graph artifact.");
   }
   console.log(
-    `Package smoke passed on port ${port} with ${tarball} in ${firstGraphMilliseconds} ms.`,
+    `Package smoke passed on port ${port} with ${tarball}; bootstrap took ${bootstrapMilliseconds} ms and the first graph took ${firstGraphMilliseconds} ms.`,
   );
 } finally {
   child.kill("SIGTERM");
