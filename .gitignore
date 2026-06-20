@@ -28,5 +28,8 @@ __pycache__/
 .env.*
 !.env.example
 
+# Local video demo script.
+Scripts.md
+
 # VibeGraph generated output.
 .vibegraph/
