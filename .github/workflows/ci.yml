@@ -62,6 +62,9 @@ jobs:
       - name: Run checks
         run: pnpm check
 
+      - name: Verify demo repository
+        run: pnpm demo:check
+
       - name: Build npm package
         run: pnpm package
 
