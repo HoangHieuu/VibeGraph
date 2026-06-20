@@ -1,13 +1,42 @@
 {
-  "name": "@vibegraph/cli",
+  "name": "@vibedev/vibegraph",
   "version": "0.1.0",
-  "private": true,
+  "description": "Local-first live codebase graph and AI context pack generator",
+  "author": "vibedev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HoangHieuu/VibeGraph.git"
+  },
+  "homepage": "https://github.com/HoangHieuu/VibeGraph#readme",
+  "bugs": {
+    "url": "https://github.com/HoangHieuu/VibeGraph/issues"
+  },
+  "keywords": [
+    "codebase-graph",
+    "dependency-graph",
+    "developer-tools",
+    "ai-context",
+    "local-first"
+  ],
   "type": "module",
   "bin": {
     "vibegraph": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json && node scripts/prepare-runtime.mjs",
+    "prepack": "pnpm build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run src"
   },

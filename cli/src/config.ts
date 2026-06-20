@@ -1,9 +1,11 @@
 import { resolve } from "node:path";
+import { existsSync, statSync } from "node:fs";
 
 export interface LaunchConfig {
   projectPath: string;
   port: number;
   openBrowser: boolean;
+  model: string | undefined;
 }
 
 export function parseLaunchConfig(
@@ -13,6 +15,7 @@ export function parseLaunchConfig(
   let projectArgument = ".";
   let port = 8732;
   let openBrowser = true;
+  let model: string | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -35,6 +38,16 @@ export function parseLaunchConfig(
       continue;
     }
 
+    if (argument === "--model") {
+      const value = args[index + 1]?.trim();
+      if (!value) {
+        throw new Error("--model must be followed by an OpenRouter model ID.");
+      }
+      model = value;
+      index += 1;
+      continue;
+    }
+
     if (argument?.startsWith("--")) {
       throw new Error(`Unsupported option: ${argument}`);
     }
@@ -46,5 +59,15 @@ export function parseLaunchConfig(
     projectPath: resolve(cwd, projectArgument),
     port,
     openBrowser,
+    model,
   };
+}
+
+export function validateProjectPath(projectPath: string): void {
+  if (!existsSync(projectPath)) {
+    throw new Error(`Project path does not exist: ${projectPath}`);
+  }
+  if (!statSync(projectPath).isDirectory()) {
+    throw new Error(`Project path is not a directory: ${projectPath}`);
+  }
 }
