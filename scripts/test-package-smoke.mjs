@@ -11,8 +11,9 @@ import {
 import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const repositoryRoot = resolve(new URL("..", import.meta.url).pathname);
+const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const distRoot = join(repositoryRoot, "dist");
 const tarballs = await Promise.all(
   (await readdir(distRoot))
@@ -56,22 +57,30 @@ const installResult = spawnSync(
     "--no-fund",
     join(distRoot, tarball),
   ],
-  { cwd: installRoot, encoding: "utf8" },
+  {
+    cwd: installRoot,
+    encoding: "utf8",
+    shell: process.platform === "win32",
+  },
 );
 if (installResult.status !== 0) {
   throw new Error(`Tarball installation failed:\n${installResult.stderr}`);
 }
 
 const port = await reservePort();
-const executable =
-  process.platform === "win32"
-    ? join(installRoot, "node_modules", ".bin", "vibegraph.cmd")
-    : join(installRoot, "node_modules", ".bin", "vibegraph");
+const executable = join(
+  installRoot,
+  "node_modules",
+  "@vibedev",
+  "vibegraph",
+  "dist",
+  "index.js",
+);
 let output = "";
 const launchStartedAt = Date.now();
 const child = spawn(
-  executable,
-  [projectRoot, "--port", String(port), "--no-open"],
+  process.execPath,
+  [executable, projectRoot, "--port", String(port), "--no-open"],
   {
     cwd: installRoot,
     env: {

@@ -65,7 +65,15 @@ dispatch for release-candidate verification.
 - The first remote run failed during job setup because `astral-sh/setup-uv`
   does not publish a floating `v8` tag. The workflow now pins the verified
   `v8.2.0` commit SHA.
-- The first remote GitHub Actions run remains required before claiming
+- The second remote run passed on Ubuntu and exposed four Windows-only CLI
+  test failures caused by hardcoded POSIX path expectations. The tests now
+  derive expected paths with Node's native path helpers. The workflow also
+  upgrades `pnpm/action-setup` to the Node.js 24-based `v6.0.8` release to
+  remove the runner deprecation warning. The package smoke test now converts
+  its module URL with `fileURLToPath`, uses the Windows shell only for npm
+  installation, and launches the packaged JavaScript entry through Node
+  instead of directly spawning an unsupported `.cmd` shim.
+- The next remote GitHub Actions run remains required before claiming complete
   Windows/Linux proof. Public npm publication also remains open, so the story
   stays `in_progress`. The owner selected `@vibedev/vibegraph`, visible author
   `vibedev`, and the MIT license.

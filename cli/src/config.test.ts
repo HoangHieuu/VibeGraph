@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { parseLaunchConfig, validateProjectPath } from "./config.js";
 
@@ -9,7 +9,7 @@ import { parseLaunchConfig, validateProjectPath } from "./config.js";
 describe("parseLaunchConfig", () => {
   it("uses the current directory and default options", () => {
     expect(parseLaunchConfig([], "/workspace")).toEqual({
-      projectPath: "/workspace",
+      projectPath: resolve("/workspace"),
       port: 8732,
       openBrowser: true,
       model: undefined,
@@ -20,7 +20,7 @@ describe("parseLaunchConfig", () => {
     expect(
       parseLaunchConfig(["demo", "--port", "9000", "--no-open"], "/workspace"),
     ).toEqual({
-      projectPath: "/workspace/demo",
+      projectPath: resolve("/workspace", "demo"),
       port: 9000,
       openBrowser: false,
       model: undefined,
