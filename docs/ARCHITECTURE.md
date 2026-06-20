@@ -83,7 +83,8 @@ provider clients, environment variables, or frontend state.
 - Runtime orchestration owns child-process lifecycle and signal forwarding.
 - The CLI communicates with the backend through documented startup and health
   contracts, not backend internal imports.
-- Packaging must preserve the public `npx vibegraph@latest .` contract.
+- Packaging must preserve the public
+  `npx @vibedev/vibegraph@latest .` contract and `vibegraph` executable.
 
 ## Parse-First Rule
 

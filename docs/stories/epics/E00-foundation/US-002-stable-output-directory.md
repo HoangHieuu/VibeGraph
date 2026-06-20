@@ -2,7 +2,7 @@
 
 ## Status
 
-planned
+implemented
 
 ## Lane
 
@@ -55,4 +55,17 @@ analyzed project without allowing generated artifacts to re-enter scans.
 
 ## Evidence
 
-None; implementation has not started.
+- `pnpm check`
+  - Backend: 6 tests passed.
+  - CLI: 3 tests passed.
+  - Frontend: 2 tests passed.
+  - Typechecks and production builds passed.
+- Backend startup created `.vibegraph/` at the selected project root.
+- The initialized directory was empty; no placeholder artifact files were
+  created.
+- Unit proof covers all four reserved artifact paths and the shared scanner
+  ignore rule.
+- Integration proof covers idempotent creation and actionable failure when
+  `.vibegraph` conflicts with an existing file.
+- Browser smoke confirmed the existing dashboard remained connected with no
+  console warnings or errors.

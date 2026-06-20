@@ -83,8 +83,9 @@ The frontend and context workflow consume the same graph artifact/API model.
 
 ## Watcher and Warnings
 
-Supported source changes are debounced for approximately 500-1000 ms. A full
-graph rebuild after a change is acceptable for the MVP.
+Supported source changes use a cross-platform polling observer, with a 100 ms
+poll interval and 750 ms debounce. A full graph rebuild after a change is the
+MVP behavior.
 
 Warning types:
 
@@ -98,6 +99,11 @@ NEW_CIRCULAR_DEPENDENCY
 
 Warnings are written to `.vibegraph/warnings.json`, streamed to the dashboard,
 and reflected in affected node/edge visual state.
+
+The warning artifact represents current active warnings. Missing-symbol,
+deleted-imported-file, newly orphaned-file, and new-cycle warnings compare the
+previous and current graph state. Restoring a valid dependency clears its
+active warning on the next rebuild.
 
 ## Accuracy Boundary
 

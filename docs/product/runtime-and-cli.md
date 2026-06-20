@@ -5,17 +5,17 @@
 Primary command:
 
 ```bash
-npx vibegraph@latest .
+npx @vibedev/vibegraph@latest .
 ```
 
 Supported options:
 
 ```bash
-npx vibegraph@latest ./path-to-project
-npx vibegraph@latest . --port 8732
-npx vibegraph@latest . --no-open
-npx vibegraph@latest . --rescan
-npx vibegraph@latest . --model google/gemini-2.0-flash-001
+npx @vibedev/vibegraph@latest ./path-to-project
+npx @vibedev/vibegraph@latest . --port 8732
+npx @vibedev/vibegraph@latest . --no-open
+npx @vibedev/vibegraph@latest . --rescan
+npx @vibedev/vibegraph@latest . --model deepseek/deepseek-v4-flash
 ```
 
 The CLI must validate the target path, start the local runtime, print the
@@ -42,8 +42,32 @@ in Phase 0, but the public workspace boundaries are fixed.
   context selection, README generation, REST, and WebSocket events.
 - The frontend owns visualization and local user interaction.
 
-The exact npm-to-Python distribution mechanism remains an explicit packaging
-decision for the release phase.
+The npm-to-Python distribution mechanism is defined by
+`docs/decisions/0014-bundled-python-bootstrap-runtime.md`.
+
+## Packaged Runtime
+
+The npm artifact contains:
+
+```text
+compiled Node CLI
+built React dashboard
+installable Python backend source
+```
+
+The packaged CLI requires Node.js 22+ and Python 3.11+. On first launch it
+creates an isolated versioned Python environment in the user's VibeGraph cache,
+installs the bundled backend and dependencies, and reuses that environment on
+later launches. It does not install into global Python or write runtime
+dependencies into the analyzed repository.
+
+In packaged mode, FastAPI serves the dashboard, REST API, and WebSocket from
+the requested dashboard port. A development checkout without bundled runtime
+assets continues to use the monorepo `pnpm dev` flow.
+
+The public npm package is `@vibedev/vibegraph`, and it exposes the fixed
+`vibegraph` executable. The visible project author is `vibedev`, and the
+repository is released under the MIT license.
 
 ## Required Output Directory
 
@@ -64,10 +88,8 @@ Preferred configuration:
 
 ```bash
 OPENROUTER_API_KEY=...
-VIBEGRAPH_MODEL=google/gemini-2.0-flash-001
+VIBEGRAPH_MODEL=deepseek/deepseek-v4-flash
 ```
-
-`GEMINI_API_KEY` may be accepted as a convenience alias.
 
 Without an API key, scanning, graph generation, dashboard behavior, watching,
 warnings, deterministic context selection, and structured README generation

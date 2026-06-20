@@ -9,19 +9,34 @@ the smallest useful set of files for an AI coding task.
 The target launch experience is:
 
 ```bash
-npx vibegraph@latest .
+npx @vibedev/vibegraph@latest .
 ```
 
 ## Project Status
 
-VibeGraph Phase 0 development foundations are running:
+VibeGraph Phases 0 through 5 and the first Phase 6 packaging slice are
+implemented locally:
 
 - React/Vite/TypeScript frontend.
 - Python/FastAPI backend.
-- TypeScript CLI workspace.
+- TypeScript CLI that launches both local services for a selected project.
 - Root development, test, typecheck, and build commands.
-
-Scanner and graph behavior have not been implemented yet.
+- Safe, idempotent `.vibegraph/` output-directory initialization.
+- Python, JavaScript, JSX, TypeScript, and TSX scanning.
+- Directed dependency graph generation at `.vibegraph/graph.json`.
+- Interactive file/module graph, search, filters, and file inspection.
+- Deterministic graph-aware context ranking and `.vibegraph/context.md`.
+- Optional OpenRouter wording enhancement with provider failure fallback.
+- Dashboard context-pack workflow with prompt and file-mention copy actions.
+- Deterministic graph-derived README generation with bounded Mermaid output.
+- Optional OpenRouter README prose enhancement with offline fallback.
+- Cross-platform, debounced repository watching with realtime graph refresh.
+- Typed dependency, missing-symbol, orphan, and circular-dependency warnings.
+- `.vibegraph/warnings.json` persistence and WebSocket dashboard updates.
+- Packable npm CLI artifact containing the production dashboard and Python
+  backend.
+- First-run isolated Python environment bootstrap with cached reuse.
+- Single-port production dashboard, API, and WebSocket runtime.
 
 ## Product Contracts
 
@@ -83,6 +98,23 @@ Health:    http://127.0.0.1:8000/api/health
 
 No LLM API key is required.
 
+Optional OpenRouter enhancement:
+
+```bash
+cp .env.example .env
+```
+
+Then set:
+
+```text
+OPENROUTER_API_KEY=...
+VIBEGRAPH_MODEL=deepseek/deepseek-v4-flash
+```
+
+Only structured graph metadata for deterministically ranked files is sent to
+OpenRouter. Source file contents remain local, and provider failure falls back
+to the offline result.
+
 Run all current verification:
 
 ```bash
@@ -92,20 +124,31 @@ pnpm check
 This performs TypeScript checks, Python/CLI/frontend tests, and production
 builds.
 
-The current CLI foundation can also be inspected after a build:
+The local CLI can be run after a build:
 
 ```bash
 node cli/dist/index.js . --port 8732 --no-open
 ```
 
-Full backend process orchestration and the public `npx vibegraph@latest .`
-release flow remain Phase 6 work.
+Build and smoke-test the installable npm tarball:
+
+```bash
+pnpm package
+pnpm test:package
+```
+
+The tarball is written under `dist/`. The selected public package is
+`@vibedev/vibegraph`, which preserves the `vibegraph` executable without
+conflicting with the unrelated unscoped registry package. VibeGraph is
+MIT-licensed and authored by
+[vibedev](https://github.com/HoangHieuu).
 
 ## Current Work
 
-The selected implementation initiative remains Phase 0:
-
-- Create and reserve the `.vibegraph/` output directory.
+Phases 0 through 5 are complete. Phase 6 is in progress: local npm artifact
+packaging and fresh-environment launch proof are implemented. Remaining work is
+public registry publication, platform smoke tests, the demo repository,
+landing page, and submission polish.
 
 See [the story backlog](docs/stories/backlog.md) and
 [test matrix](docs/TEST_MATRIX.md) for current status.

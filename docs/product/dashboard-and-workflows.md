@@ -51,8 +51,9 @@ The result includes:
 - `.vibegraph/context.md`.
 
 Without an API key, deterministic graph heuristics and a basic prompt template
-must produce a valid result. An LLM may improve explanations but cannot replace
-graph retrieval or claim to edit files.
+must produce a valid result. The configured OpenRouter model may improve
+explanations but cannot replace graph retrieval, receive source contents by
+default, or claim to edit files.
 
 ## README Generation
 
@@ -65,7 +66,13 @@ The generator uses project metadata and graph structure to create:
 It includes overview, architecture, main modules, a Mermaid diagram, run
 instructions, key files, known warnings, and generation attribution.
 
-Without an API key, deterministic prose and structure remain available.
+The dashboard accepts an optional project description, confirms the generated
+artifact, previews the Markdown, and supports copying the complete draft.
+
+Without an API key, deterministic prose and structure remain available. The
+configured OpenRouter model may improve overview, architecture, and
+module-description prose, but it cannot add files, commands, warnings, or
+Mermaid relationships and does not receive source contents.
 
 ## Local API
 
@@ -89,6 +96,10 @@ WS /ws/events
 ```
 
 Initial event types include `graph_updated` and `warning_created`.
+
+`graph_updated` carries the complete parsed graph and active warning list so
+the dashboard can replace both states without a follow-up REST request.
+Transient WebSocket closure triggers a bounded client reconnect.
 
 Unknown request payloads and provider responses must be parsed at interface
 boundaries before entering application or graph logic.

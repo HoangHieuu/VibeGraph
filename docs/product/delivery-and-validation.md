@@ -10,7 +10,7 @@
 | 3 | Context packs and offline/provider behavior |
 | 4 | README generation and Mermaid output |
 | 5 | Watcher and dependency warnings |
-| 6 | npm packaging, landing page, demo, submission polish |
+| 6 | In progress: npm artifact implemented; public naming, landing page, demo, and submission remain |
 
 Only the selected phase should be decomposed into active story packets. Later
 phases remain backlog candidates until selected.
@@ -20,7 +20,8 @@ phases remain backlog candidates until selected.
 - First graph in under 30 seconds for the demo repository.
 - Warning visible in under 2 seconds after save.
 - Dashboard usable with at least 100 graph nodes.
-- Context pack in under 10 seconds.
+- Deterministic context pack in under 10 seconds.
+- Optional provider enhancement is bounded at 25 seconds before fallback.
 - README generation in under 15 seconds.
 - Recommended context contains at least 60% fewer files than the full repo.
 
