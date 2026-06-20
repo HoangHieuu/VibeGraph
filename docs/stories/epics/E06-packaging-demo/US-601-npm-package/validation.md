@@ -33,6 +33,10 @@ pnpm test:package
 scripts/bin/harness-cli story verify US-601
 ```
 
+GitHub Actions runs the same check, package, and packaged-runtime smoke sequence
+on `ubuntu-latest` and `windows-latest`. The workflow also supports manual
+dispatch for release-candidate verification.
+
 ## Acceptance Evidence
 
 - `pnpm check` passed with 31 backend, 12 CLI, and 21 frontend tests plus
@@ -52,6 +56,13 @@ scripts/bin/harness-cli story verify US-601
   produced no console warnings or errors.
 - Generated runtime assets live under `cli/dist/`, so scanning the VibeGraph
   repository does not add duplicate package-source nodes.
-- Public npm publication and Windows/Linux smoke proof remain open, so the
-  story stays `in_progress`. The owner selected `@vibedev/vibegraph`, visible
-  author `vibedev`, and the MIT license.
+- `.github/workflows/ci.yml` defines Ubuntu and Windows jobs with Node.js 22,
+  pnpm 10.22.0, Python 3.11, locked dependency installation, full checks,
+  package assembly, and packaged-runtime smoke testing.
+- Local workflow-equivalent verification passed after the CI addition:
+  `uv sync --project backend --locked`, `pnpm check`, `pnpm package`, and
+  `pnpm test:package`; the fresh packaged graph completed in 9587 ms.
+- The first remote GitHub Actions run remains required before claiming
+  Windows/Linux proof. Public npm publication also remains open, so the story
+  stays `in_progress`. The owner selected `@vibedev/vibegraph`, visible author
+  `vibedev`, and the MIT license.
