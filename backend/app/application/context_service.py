@@ -3,7 +3,6 @@ import re
 from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -202,10 +201,6 @@ def rank_context_files(
                 f"exports match {', '.join(sorted(symbol_overlap)[:3])}"
             )
 
-        if node.is_entrypoint:
-            score += 3
-        score += node.risk_score * 5
-        score += _recency_bonus(node.last_modified)
         base_scores[node_id] = score
         reasons[node_id] = node_reasons
 
@@ -227,6 +222,10 @@ def rank_context_files(
                 ),
             )
         ][:2]
+        for seed_id in seed_ids:
+            reasons[seed_id].append(
+                "high-connectivity fallback because the task has no path or symbol match"
+            )
 
     distances, relation_reasons = _graph_distances(
         seed_ids,
@@ -241,10 +240,16 @@ def rank_context_files(
             score += {0: 65, 1: 56, 2: 25, 3: 10, 4: 4}.get(distance, 0)
             if relation_reasons.get(node_id):
                 reasons[node_id].append(relation_reasons[node_id])
-        if node.type == "test" and options.include_tests:
+            score += node.risk_score * 2
+        if (
+            node.type == "test"
+            and options.include_tests
+            and distance is not None
+        ):
             score += 12
-            reasons[node_id].append("relevant test coverage")
-        scored.append((node_id, score))
+            reasons[node_id].append("test connected to a task-matched file")
+        if score > 0 and (base_scores[node_id] > 0 or distance is not None):
+            scored.append((node_id, score))
 
     selected = sorted(scored, key=lambda item: (-item[1], item[0]))[
         : options.max_files
@@ -323,22 +328,6 @@ def _tokens(value: str) -> set[str]:
     }
 
 
-def _recency_bonus(value: str) -> float:
-    if not value:
-        return 0
-    try:
-        modified = datetime.fromisoformat(value)
-        if modified.tzinfo is None:
-            modified = modified.replace(tzinfo=timezone.utc)
-        age_days = max(
-            0,
-            (datetime.now(timezone.utc) - modified.astimezone(timezone.utc)).days,
-        )
-        return max(0, 4 - age_days / 30)
-    except ValueError:
-        return 0
-
-
 def _graph_distances(
     seeds: list[str],
     links: list[GraphLink],
@@ -347,10 +336,10 @@ def _graph_distances(
     adjacency: dict[str, list[tuple[str, str]]] = {}
     for link in links:
         adjacency.setdefault(link.source, []).append(
-            (link.target, "direct dependency")
+            (link.target, "dependency")
         )
         adjacency.setdefault(link.target, []).append(
-            (link.source, "direct importer")
+            (link.source, "importer")
         )
 
     distances = {seed: 0 for seed in seeds}
@@ -367,9 +356,9 @@ def _graph_distances(
                 continue
             distances[neighbor] = next_distance
             reasons[neighbor] = (
-                relation
+                f"direct {relation} of {current}"
                 if next_distance == 1
-                else f"graph neighbor at depth {next_distance}"
+                else f"{relation} reached from {current} at graph depth {next_distance}"
             )
             queue.append(neighbor)
     return distances, reasons

@@ -1,0 +1,5 @@
+{
+  "name": "accuracy-project",
+  "private": true,
+  "workspaces": ["packages/*"]
+}

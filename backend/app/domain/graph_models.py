@@ -21,6 +21,7 @@ class FileRecord:
     loc: int
     size_bytes: int
     last_modified: str
+    modified_ns: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +56,8 @@ class GraphNode:
     is_entrypoint: bool = False
     is_orphan: bool = False
     has_warning: bool = False
+    in_cycle: bool = False
+    cycle_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +107,8 @@ class GraphDocument:
                     "isEntrypoint": node.is_entrypoint,
                     "isOrphan": node.is_orphan,
                     "hasWarning": node.has_warning,
+                    "inCycle": node.in_cycle,
+                    "cycleId": node.cycle_id,
                 }
                 for node in self.nodes
             ],

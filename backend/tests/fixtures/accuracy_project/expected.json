@@ -1,0 +1,25 @@
+{
+  "edges": [
+    ["src/app.tsx", "src/components/Button.tsx"],
+    ["src/broken.ts", "src/types.ts"],
+    ["src/index.ts", "src/app.tsx"],
+    ["src/index.ts", "src/helpers.ts"],
+    ["src/index.ts", "src/types.ts"],
+    ["src/index.ts", "src/utils.ts"],
+    ["src/pkg/api.py", "src/pkg/service.py"],
+    ["src/legacy/loader.js", "src/legacy/config.js"],
+    ["src/cycle/alpha.ts", "src/cycle/beta.ts"],
+    ["src/cycle/beta.ts", "src/cycle/alpha.ts"],
+    ["src/uses-ui.ts", "packages/ui/src/index.ts"]
+  ],
+  "warnings": [
+    ["MISSING_EXPORTED_SYMBOL", "src/broken.ts", "src/types.ts", "MissingUser"]
+  ],
+  "contextTask": "Fix App button rendering for User",
+  "contextRequired": [
+    "src/app.tsx",
+    "src/components/Button.tsx",
+    "src/index.ts",
+    "src/types.ts"
+  ]
+}

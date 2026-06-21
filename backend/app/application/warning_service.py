@@ -131,15 +131,14 @@ def _cycles(document: GraphDocument) -> tuple[tuple[str, ...], ...]:
         for link in document.links
         if link.status == "healthy"
     )
-    normalized: set[tuple[str, ...]] = set()
-    for cycle in nx.simple_cycles(graph):
-        if len(cycle) < 2:
-            continue
-        rotations = [
-            tuple(cycle[index:] + cycle[:index]) for index in range(len(cycle))
-        ]
-        normalized.add(min(rotations))
-    return tuple(sorted(normalized))
+    return tuple(
+        tuple(sorted(component))
+        for component in sorted(
+            nx.strongly_connected_components(graph),
+            key=lambda item: tuple(sorted(item)),
+        )
+        if len(component) > 1
+    )
 
 
 def _warning(

@@ -120,3 +120,65 @@ def test_file_detail_contains_dependencies_and_exports(tmp_path: Path) -> None:
     assert detail["exports"] == ["validate_session", "login"]
     assert detail["imports"] == ["backend/app/services/session.py"]
     assert detail["importedBy"] == ["backend/tests/test_auth.py"]
+
+
+def test_graph_resolves_tsconfig_aliases_and_default_exports(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "tsconfig.json",
+        '{"compilerOptions":{"baseUrl":".","paths":{"@/*":["src/*"]}}}',
+    )
+    write(
+        tmp_path / "src" / "main.ts",
+        'import Page from "@/page";\n'
+        'import * as helpers from "@/helpers";\n'
+        "export const main = () => Page(helpers);\n",
+    )
+    write(
+        tmp_path / "src" / "page.ts",
+        "export default function Page() { return true; }\n",
+    )
+    write(
+        tmp_path / "src" / "helpers.ts",
+        "export const helper = true;\n",
+    )
+    service = ProjectGraphService.create(
+        tmp_path, ensure_output_directory(tmp_path)
+    )
+
+    document = service.scan()
+
+    links = {
+        (link.source, link.target): link.status for link in document.links
+    }
+    assert links[("src/main.ts", "src/page.ts")] == "healthy"
+    assert links[("src/main.ts", "src/helpers.ts")] == "healthy"
+    assert not service.warnings
+
+
+def test_scan_reuses_unchanged_parsed_files_and_invalidates_changes(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path / "a.py", "from b import value\n")
+    write(tmp_path / "b.py", "value = 1\n")
+    service = ProjectGraphService.create(
+        tmp_path, ensure_output_directory(tmp_path)
+    )
+
+    service.scan()
+    assert service.parsed_files_count == 2
+    assert service.reused_files_count == 0
+
+    service.scan()
+    assert service.parsed_files_count == 0
+    assert service.reused_files_count == 2
+
+    write(tmp_path / "b.py", "value = 20\n")
+    service.scan()
+    assert service.parsed_files_count == 1
+    assert service.reused_files_count == 1
+
+    service.scan(force=True)
+    assert service.parsed_files_count == 2
+    assert service.reused_files_count == 0

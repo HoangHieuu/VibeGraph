@@ -10,6 +10,7 @@ import { WarningConsole } from "./components/WarningConsole";
 import {
   filterGraph,
   graphForMode,
+  matchedVisibleIds,
   searchNodes,
 } from "./graph/transforms";
 import { useWorkspace } from "./hooks/useWorkspace";
@@ -50,12 +51,16 @@ export function App() {
     [filteredGraph, mode],
   );
   const searchResults = useMemo(
-    () => searchNodes(workspace.graph?.nodes ?? [], deferredQuery),
-    [deferredQuery, workspace.graph?.nodes],
+    () => searchNodes(filteredGraph.nodes, deferredQuery),
+    [deferredQuery, filteredGraph.nodes],
   );
   const matchedIds = useMemo(
-    () => new Set(searchResults.map((node) => node.id)),
-    [searchResults],
+    () => matchedVisibleIds(visibleGraph.nodes, deferredQuery),
+    [deferredQuery, visibleGraph.nodes],
+  );
+  const nodeIds = useMemo(
+    () => new Set(workspace.graph?.nodes.map((node) => node.id) ?? []),
+    [workspace.graph?.nodes],
   );
   const selectedNode =
     workspace.graph?.nodes.find((node) => node.id === selectedId) ?? null;
@@ -84,6 +89,7 @@ export function App() {
   return (
     <main className="workspace-shell">
       <TopBar
+        connected={workspace.connected}
         onQueryChange={setQuery}
         onGenerateReadme={() => {
           setContextOpen(false);
@@ -123,7 +129,20 @@ export function App() {
             onSelectNode={selectNode}
             selectedId={selectedId}
           />
-          <WarningConsole warnings={workspace.warnings} />
+          <WarningConsole
+            onSelectWarning={(warning) => {
+              const node = workspace.graph?.nodes.find(
+                (candidate) =>
+                  candidate.id === warning.source ||
+                  candidate.id === warning.target,
+              );
+              if (node) {
+                setMode("files");
+                selectNode(node);
+              }
+            }}
+            warnings={workspace.warnings}
+          />
           <button
             className="context-launcher"
             onClick={() => setContextOpen(true)}
@@ -154,7 +173,17 @@ export function App() {
         </section>
         <FileInspector
           links={workspace.graph.links}
+          navigableIds={nodeIds}
           node={selectedNode}
+          onSelectPath={(path) => {
+            const target = workspace.graph?.nodes.find(
+              (candidate) => candidate.id === path,
+            );
+            if (target) {
+              setMode("files");
+              selectNode(target);
+            }
+          }}
           onContextAction={() =>
             {
               setContextTask(

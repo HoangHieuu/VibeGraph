@@ -42,9 +42,22 @@ export function rescanGraph(): Promise<GraphDocument> {
   return requestJson("/api/rescan", parseGraphDocument, { method: "POST" });
 }
 
+export function fetchWarnings(): Promise<GraphWarning[]> {
+  return requestJson("/api/warnings", parseWarnings);
+}
+
+export interface WorkspaceSubscription {
+  onEvent: (event: WorkspaceEvent) => void;
+  onStatusChange?: (connected: boolean) => void;
+}
+
 export function subscribeWorkspaceEvents(
-  onEvent: (event: WorkspaceEvent) => void,
+  subscription: WorkspaceSubscription | ((event: WorkspaceEvent) => void),
 ): () => void {
+  const { onEvent, onStatusChange } =
+    typeof subscription === "function"
+      ? { onEvent: subscription, onStatusChange: undefined }
+      : subscription;
   let active = true;
   let socket: WebSocket | null = null;
   let reconnectTimer: number | null = null;
@@ -52,6 +65,9 @@ export function subscribeWorkspaceEvents(
   const connect = () => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     socket = new WebSocket(`${protocol}//${window.location.host}/ws/events`);
+    socket.addEventListener("open", () => {
+      onStatusChange?.(true);
+    });
     socket.addEventListener("message", (message) => {
       try {
         onEvent(parseWorkspaceEvent(JSON.parse(String(message.data))));
@@ -60,6 +76,7 @@ export function subscribeWorkspaceEvents(
       }
     });
     socket.addEventListener("close", () => {
+      onStatusChange?.(false);
       if (active) {
         reconnectTimer = window.setTimeout(connect, 1000);
       }
@@ -186,6 +203,8 @@ function parseGraphNode(value: unknown, index: number): GraphNode {
     ),
     isOrphan: requireBoolean(record.isOrphan, `${name}.isOrphan`),
     hasWarning: requireBoolean(record.hasWarning, `${name}.hasWarning`),
+    inCycle: optionalBoolean(record.inCycle, false),
+    cycleId: optionalNumber(record.cycleId, null),
   };
 }
 
@@ -247,6 +266,14 @@ function requireBoolean(value: unknown, name: string): boolean {
     throw new Error(`${name} must be a boolean.`);
   }
   return value;
+}
+
+function optionalBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function optionalNumber(value: unknown, fallback: number | null): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function requireStringArray(value: unknown, name: string): string[] {

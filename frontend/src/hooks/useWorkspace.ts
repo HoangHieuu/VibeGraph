@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import {
+  fetchWarnings,
   loadWorkspace,
   rescanGraph,
   subscribeWorkspaceEvents,
@@ -17,6 +18,7 @@ interface WorkspaceState {
   warnings: GraphWarning[];
   loading: boolean;
   rescanning: boolean;
+  connected: boolean;
   error: string | null;
 }
 
@@ -27,6 +29,7 @@ export function useWorkspace() {
     warnings: [],
     loading: true,
     rescanning: false,
+    connected: false,
     error: null,
   });
 
@@ -35,12 +38,13 @@ export function useWorkspace() {
     void loadWorkspace()
       .then((workspace) => {
         if (!controller.signal.aborted) {
-          setState({
+          setState((current) => ({
+            ...current,
             ...workspace,
             loading: false,
             rescanning: false,
             error: null,
-          });
+          }));
         }
       })
       .catch((error: unknown) => {
@@ -57,7 +61,10 @@ export function useWorkspace() {
 
   useEffect(
     () =>
-      subscribeWorkspaceEvents((event) => {
+      subscribeWorkspaceEvents({
+        onStatusChange: (connected) =>
+          setState((current) => ({ ...current, connected })),
+        onEvent: (event) => {
         if (event.type === "graph_updated") {
           setState((current) => ({
             ...current,
@@ -81,6 +88,7 @@ export function useWorkspace() {
             ? current.warnings
             : [...current.warnings, event.warning],
         }));
+        },
       }),
     [],
   );
@@ -88,10 +96,14 @@ export function useWorkspace() {
   const rescan = useCallback(async () => {
     setState((current) => ({ ...current, rescanning: true, error: null }));
     try {
-      const graph = await rescanGraph();
+      const [graph, warnings] = await Promise.all([
+        rescanGraph(),
+        fetchWarnings(),
+      ]);
       setState((current) => ({
         ...current,
         graph,
+        warnings,
         project: current.project
           ? { ...current.project, stats: graph.stats }
           : current.project,

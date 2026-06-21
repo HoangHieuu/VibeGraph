@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  cycleLinkKeys,
   filterGraph,
   graphForMode,
   highlightFor,
   linkKey,
+  matchedVisibleIds,
   neighborsFor,
   searchNodes,
 } from "./transforms";
@@ -32,6 +34,8 @@ function node(
     isEntrypoint: false,
     isOrphan: false,
     hasWarning: false,
+    inCycle: false,
+    cycleId: null,
     ...overrides,
   };
 }
@@ -122,6 +126,39 @@ describe("graph transformations", () => {
       nodes: new Set(),
       links: new Set(),
     });
+  });
+
+  it("identifies links whose endpoints share a cycle", () => {
+    const nodes = [
+      node("a.ts", "file", { inCycle: true, cycleId: 0 }),
+      node("b.ts", "file", { inCycle: true, cycleId: 0 }),
+      node("c.ts", "file", { inCycle: true, cycleId: 1 }),
+    ];
+    const links = [
+      { source: "a.ts", target: "b.ts", type: "imports", symbols: [], status: "healthy" },
+      { source: "b.ts", target: "a.ts", type: "imports", symbols: [], status: "healthy" },
+      { source: "a.ts", target: "c.ts", type: "imports", symbols: [], status: "healthy" },
+    ];
+
+    const keys = cycleLinkKeys(nodes, links);
+
+    expect(keys.has(linkKey(links[0]!))).toBe(true);
+    expect(keys.has(linkKey(links[1]!))).toBe(true);
+    // Endpoints in different cycles are not a shared-cycle edge.
+    expect(keys.has(linkKey(links[2]!))).toBe(false);
+  });
+
+  it("matches visible file nodes and module groups against a query", () => {
+    const fileMatches = matchedVisibleIds(graph.nodes, "api");
+    expect(fileMatches.has("src/lib/api.ts")).toBe(true);
+
+    const grouped = graphForMode(filterGraph(graph, {
+      tests: true,
+      config: true,
+      orphans: true,
+    }), "modules");
+    const moduleMatches = matchedVisibleIds(grouped.nodes, "lib/api");
+    expect([...moduleMatches].some((id) => id.startsWith("module:"))).toBe(true);
   });
 
   it("processes a 100-node graph without dropping nodes", () => {

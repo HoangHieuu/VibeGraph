@@ -43,6 +43,58 @@ def test_scanner_detects_supported_languages_and_ignores_noise(
     }
 
 
+def test_scanner_honors_gitignore_patterns(tmp_path: Path) -> None:
+    write(tmp_path / ".gitignore", "generated/\n*.local.ts\n/secrets.ts\n")
+    write(tmp_path / "keep.ts", "export const keep = 1\n")
+    write(tmp_path / "generated" / "schema.ts", "export const gen = 1\n")
+    write(tmp_path / "src" / "config.local.ts", "export const local = 1\n")
+    write(tmp_path / "secrets.ts", "export const secret = 1\n")
+    write(tmp_path / "src" / "nested" / "secrets.ts", "export const ok = 1\n")
+
+    records = scan_repository(tmp_path)
+
+    assert [record.path for record in records] == [
+        "keep.ts",
+        "src/nested/secrets.ts",
+    ]
+
+
+def test_javascript_parser_extracts_commonjs_and_type_only_imports(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "legacy.js",
+        "\n".join(
+            [
+                'const config = require("./config");',
+                'import type { Session } from "./session";',
+                'import "./styles.css";',
+                "function build() { return config; }",
+                "module.exports = { build, version: 1 };",
+                'exports.helper = () => config;',
+            ]
+        ),
+    )
+    record = scan_repository(tmp_path)[0]
+
+    parsed = parse_file(tmp_path, record)
+
+    modules = [item.module for item in parsed.imports]
+    assert "./config" in modules
+    assert "./styles.css" in modules
+    require_import = next(
+        item for item in parsed.imports if item.module == "./config"
+    )
+    assert require_import.dynamic is True
+    type_import = next(
+        item for item in parsed.imports if item.module == "./session"
+    )
+    assert type_import.symbols == ()
+    assert "build" in parsed.exports
+    assert "version" in parsed.exports
+    assert "helper" in parsed.exports
+
+
 def test_python_parser_extracts_imports_and_top_level_exports(
     tmp_path: Path,
 ) -> None:
@@ -106,10 +158,10 @@ def test_typescript_parser_extracts_import_variants_and_exports(
         "./tools",
         "./lazy",
     ]
-    assert parsed.imports[0].symbols == ("session",)
+    assert parsed.imports[0].symbols == ("default",)
     assert parsed.imports[1].symbols == ("AuthError",)
-    assert parsed.imports[2].symbols == ("Client", "Session", "refresh")
-    assert parsed.imports[3].symbols == ("tools",)
+    assert parsed.imports[2].symbols == ("default", "Session", "refresh")
+    assert parsed.imports[3].symbols == ()
     assert parsed.imports[4].dynamic is True
     assert parsed.exports == (
         "login",
@@ -117,3 +169,27 @@ def test_typescript_parser_extracts_import_variants_and_exports(
         "logout",
         "default",
     )
+
+
+def test_typescript_parser_ignores_text_and_tracks_reexports(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "index.ts",
+        "\n".join(
+            [
+                '// import { fake } from "./comment";',
+                "const text = \"import fake from './string'\";",
+                'export { helper as renamed } from "./helper";',
+                'export * as tools from "./tools";',
+                "export interface Session { id: string }",
+            ]
+        ),
+    )
+    parsed = parse_file(tmp_path, scan_repository(tmp_path)[0])
+
+    assert [(item.module, item.symbols) for item in parsed.imports] == [
+        ("./helper", ("helper",)),
+        ("./tools", ()),
+    ]
+    assert parsed.exports == ("renamed", "tools", "Session")

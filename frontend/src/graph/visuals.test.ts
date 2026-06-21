@@ -21,6 +21,8 @@ function node(overrides: Partial<GraphNode> = {}): GraphNode {
     isEntrypoint: false,
     isOrphan: false,
     hasWarning: false,
+    inCycle: false,
+    cycleId: null,
     ...overrides,
   };
 }

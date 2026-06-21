@@ -238,17 +238,29 @@ def detect_commands(
         for entrypoint in entrypoints[:3]:
             if entrypoint.endswith(".py"):
                 commands.append(f"python {entrypoint}")
-            elif entrypoint.endswith((".js", ".ts")):
+            elif entrypoint.endswith((".js", ".jsx")):
                 commands.append(f"node {entrypoint}")
     return tuple(dict.fromkeys(commands))
 
 
 def collect_warnings(document: GraphDocument) -> tuple[str, ...]:
-    return tuple(
-        f"{link.source} could not resolve {link.target.removeprefix('unresolved:')}."
-        for link in document.links
-        if link.status == "unresolved"
-    )
+    warnings: list[str] = []
+    exports_by_path = {node.path: set(node.exports) for node in document.nodes}
+    for link in document.links:
+        if link.status == "unresolved":
+            warnings.append(
+                f"{link.source} could not resolve "
+                f"{link.target.removeprefix('unresolved:')}."
+            )
+        elif link.status == "missing_symbol":
+            target_exports = exports_by_path.get(link.target, set())
+            for symbol in link.symbols:
+                if symbol not in target_exports:
+                    warnings.append(
+                        f"{link.source} imports {symbol} from {link.target}, "
+                        f"but {symbol} is not exported."
+                    )
+    return tuple(warnings)
 
 
 def build_mermaid(

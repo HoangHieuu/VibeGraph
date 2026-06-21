@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { endpointId } from "../graph/transforms";
 import type { GraphLink, GraphNode, GraphWarning } from "../types/graph";
 import { FileIcon } from "./icons";
@@ -7,19 +9,64 @@ interface FileInspectorProps {
   links: GraphLink[];
   warnings: GraphWarning[];
   onContextAction: () => void;
+  onSelectPath?: (path: string) => void;
+  navigableIds?: Set<string>;
 }
 
-function PathList({ paths }: { paths: string[] }) {
+const COLLAPSED_LIMIT = 7;
+
+function PathList({
+  paths,
+  onSelectPath,
+  navigableIds,
+}: {
+  paths: string[];
+  onSelectPath?: (path: string) => void;
+  navigableIds?: Set<string>;
+}) {
+  const [expanded, setExpanded] = useState(false);
   if (paths.length === 0) return <p className="empty-copy">None</p>;
+  const visible = expanded ? paths : paths.slice(0, COLLAPSED_LIMIT);
   return (
     <ul className="path-list">
-      {paths.slice(0, 7).map((path, index) => (
-        <li key={`${path}-${index}`}>
-          <FileIcon />
-          <span>{path}</span>
+      {visible.map((path, index) => {
+        const navigable =
+          onSelectPath !== undefined &&
+          (navigableIds === undefined || navigableIds.has(path));
+        return (
+          <li key={`${path}-${index}`}>
+            {navigable ? (
+              <button
+                className="path-link"
+                onClick={() => onSelectPath?.(path)}
+                title={`Inspect ${path}`}
+                type="button"
+              >
+                <FileIcon />
+                <span>{path}</span>
+              </button>
+            ) : (
+              <>
+                <FileIcon />
+                <span>{path}</span>
+              </>
+            )}
+          </li>
+        );
+      })}
+      {paths.length > COLLAPSED_LIMIT ? (
+        <li>
+          <button
+            className="path-toggle"
+            onClick={() => setExpanded((current) => !current)}
+            type="button"
+          >
+            {expanded
+              ? "Show fewer"
+              : `+ ${paths.length - COLLAPSED_LIMIT} more`}
+          </button>
         </li>
-      ))}
-      {paths.length > 7 ? <li>+ {paths.length - 7} more</li> : null}
+      ) : null}
     </ul>
   );
 }
@@ -29,6 +76,8 @@ export function FileInspector({
   links,
   warnings,
   onContextAction,
+  onSelectPath,
+  navigableIds,
 }: FileInspectorProps) {
   if (!node) {
     return (
@@ -70,15 +119,25 @@ export function FileInspector({
       </dl>
       <section>
         <h4>Imports ({imports.length})</h4>
-        <PathList paths={imports} />
+        <PathList
+          key={`imports-${node.id}`}
+          navigableIds={navigableIds}
+          onSelectPath={onSelectPath}
+          paths={imports}
+        />
       </section>
       <section>
         <h4>Imported by ({importedBy.length})</h4>
-        <PathList paths={importedBy} />
+        <PathList
+          key={`importedBy-${node.id}`}
+          navigableIds={navigableIds}
+          onSelectPath={onSelectPath}
+          paths={importedBy}
+        />
       </section>
       <section>
         <h4>Exports ({node.exports.length})</h4>
-        <PathList paths={node.exports} />
+        <PathList key={`exports-${node.id}`} paths={node.exports} />
       </section>
       <section>
         <h4>Warnings ({nodeWarnings.length})</h4>

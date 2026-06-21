@@ -54,6 +54,7 @@ export function graphForMode(
       existing.inDegree += node.inDegree;
       existing.outDegree += node.outDegree;
       existing.hasWarning ||= node.hasWarning;
+      existing.inCycle ||= node.inCycle;
       existing.exports.push(node.id);
     } else {
       modules.set(id, {
@@ -96,6 +97,32 @@ export function searchNodes(
     .slice(0, 8);
 }
 
+export function matchedVisibleIds(
+  nodes: GraphNode[],
+  query: string,
+): Set<string> {
+  const normalized = query.trim().toLowerCase();
+  const ids = new Set<string>();
+  if (!normalized) return ids;
+  for (const node of nodes) {
+    if (
+      node.label.toLowerCase().includes(normalized) ||
+      node.path.toLowerCase().includes(normalized)
+    ) {
+      ids.add(node.id);
+      continue;
+    }
+    // Module nodes carry their grouped file ids in `exports`.
+    if (
+      node.type === "folder" &&
+      node.exports.some((id) => id.toLowerCase().includes(normalized))
+    ) {
+      ids.add(node.id);
+    }
+  }
+  return ids;
+}
+
 export function neighborsFor(
   nodeId: string,
   links: GraphLink[],
@@ -112,6 +139,25 @@ export function neighborsFor(
 
 export function linkKey(link: GraphLink): string {
   return `${endpointId(link.source)}->${endpointId(link.target)}:${link.type}`;
+}
+
+export function cycleLinkKeys(
+  nodes: GraphNode[],
+  links: GraphLink[],
+): Set<string> {
+  const cycleById = new Map<string, number | null>();
+  for (const node of nodes) {
+    if (node.inCycle) cycleById.set(node.id, node.cycleId);
+  }
+  const keys = new Set<string>();
+  for (const link of links) {
+    const source = endpointId(link.source);
+    const target = endpointId(link.target);
+    if (!cycleById.has(source) || !cycleById.has(target)) continue;
+    if (cycleById.get(source) !== cycleById.get(target)) continue;
+    keys.add(linkKey(link));
+  }
+  return keys;
 }
 
 export function highlightFor(

@@ -6,7 +6,7 @@ import httpx
 from fastapi.testclient import TestClient
 
 from app.application.graph_service import ProjectGraphService
-from app.application.readme_service import ReadmeService
+from app.application.readme_service import ReadmeService, detect_commands
 from app.domain.readme_models import ReadmeEnhancement
 from app.infrastructure.openrouter_client import OpenRouterClient
 from app.infrastructure.output_directory import ensure_output_directory
@@ -97,6 +97,27 @@ def test_readme_selects_entrypoints_and_bounded_internal_edges(
     assert "frontend/src/main.tsx" in result.entrypoints
     assert "unresolved:./missing" not in result.mermaid
     assert result.mermaid.count("-->") <= 14
+
+
+def test_readme_reports_missing_symbols_and_avoids_unverified_ts_command(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "main.ts",
+        'import { missing } from "./service";\nexport const main = missing;\n',
+    )
+    write(tmp_path / "service.ts", "export const available = true;\n")
+    paths = ensure_output_directory(tmp_path)
+    graph = ProjectGraphService.create(tmp_path, paths)
+    graph.scan()
+    service = ReadmeService(paths, lambda: graph.document)
+
+    result = asyncio.run(service.generate())
+
+    assert result.warnings == (
+        "main.ts imports missing from service.ts, but missing is not exported.",
+    )
+    assert detect_commands(tmp_path, ("main.ts",)) == ()
 
 
 def test_provider_enhances_only_readme_prose(tmp_path: Path) -> None:

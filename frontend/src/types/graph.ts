@@ -17,6 +17,8 @@ export interface GraphNode {
   isEntrypoint: boolean;
   isOrphan: boolean;
   hasWarning: boolean;
+  inCycle: boolean;
+  cycleId: number | null;
 }
 
 export interface GraphLink {

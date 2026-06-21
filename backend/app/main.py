@@ -235,7 +235,10 @@ async def publish_scan(
     async with lock:
         service: ProjectGraphService = application.state.graph_service
         previous_warning_keys = {warning.key for warning in service.warnings}
-        document = await asyncio.to_thread(service.scan)
+        document = await asyncio.to_thread(
+            service.scan,
+            force="manual-rescan" in changed_paths,
+        )
         warnings = [warning.to_dict() for warning in service.warnings]
         broker: EventBroker = application.state.event_broker
         await broker.broadcast(

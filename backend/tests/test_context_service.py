@@ -105,6 +105,45 @@ def test_direct_graph_neighbors_outrank_generic_path_matches(
     )
 
 
+def test_ranking_does_not_pad_with_unrelated_recent_files(
+    tmp_path: Path,
+) -> None:
+    service = build_service(tmp_path)
+    (tmp_path / "unrelated_test.py").write_text(
+        "def test_unrelated(): assert True\n",
+        encoding="utf-8",
+    )
+    graph = ProjectGraphService.create(
+        tmp_path, ensure_output_directory(tmp_path)
+    )
+    graph.scan()
+
+    recommendations = rank_context_files(
+        graph.document,
+        "Fix login error handling in auth.py",
+        ContextPackOptions(max_files=8),
+    )
+
+    assert "unrelated_test.py" not in {
+        item.path for item in recommendations
+    }
+    assert all(
+        any(
+            evidence in item.reason
+            for evidence in (
+                "task",
+                "path matches",
+                "exports match",
+                "dependency",
+                "importer",
+                "graph depth",
+                "test connected",
+            )
+        )
+        for item in recommendations
+    )
+
+
 def test_offline_context_pack_writes_markdown(tmp_path: Path) -> None:
     service = build_service(tmp_path)
 
@@ -117,7 +156,7 @@ def test_offline_context_pack_writes_markdown(tmp_path: Path) -> None:
 
     assert pack.mode == "offline"
     assert pack.model is None
-    assert len(pack.recommendations) == 4
+    assert 1 <= len(pack.recommendations) <= 4
     assert pack.reduction_percent >= 0
     artifact = tmp_path / ".vibegraph" / "context.md"
     assert artifact.is_file()

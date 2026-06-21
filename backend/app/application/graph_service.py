@@ -31,6 +31,9 @@ class ProjectGraphService:
     warnings: tuple[GraphWarning, ...]
     initialized: bool
     lock: threading.RLock
+    parsed_cache: dict[str, ParsedFile]
+    parsed_files_count: int
+    reused_files_count: int
 
     @classmethod
     def create(
@@ -43,13 +46,37 @@ class ProjectGraphService:
             (),
             False,
             threading.RLock(),
+            {},
+            0,
+            0,
         )
 
-    def scan(self) -> GraphDocument:
+    def scan(self, *, force: bool = False) -> GraphDocument:
         with self.lock:
             previous = self.document
-            records = scan_repository(self.project_root)
-            parsed = [parse_file(self.project_root, record) for record in records]
+            cached_records = (
+                {}
+                if force
+                else {
+                    path: parsed.file
+                    for path, parsed in self.parsed_cache.items()
+                }
+            )
+            records = scan_repository(self.project_root, cached_records)
+            parsed: list[ParsedFile] = []
+            parsed_count = 0
+            reused_count = 0
+            for record in records:
+                cached = None if force else self.parsed_cache.get(record.path)
+                if cached is not None and cached.file == record:
+                    parsed.append(cached)
+                    reused_count += 1
+                else:
+                    parsed.append(parse_file(self.project_root, record))
+                    parsed_count += 1
+            self.parsed_cache = {item.file.path: item for item in parsed}
+            self.parsed_files_count = parsed_count
+            self.reused_files_count = reused_count
             document = build_graph_document(self.project_root, parsed)
             warnings = derive_warnings(
                 previous,
@@ -122,6 +149,7 @@ def build_graph_document(
     parsed_by_path = {item.file.path: item for item in parsed_files}
     nodes: dict[str, GraphNode] = {}
     links: list[GraphLink] = []
+    resolution = load_resolution_config(project_root)
 
     for parsed in parsed_files:
         node = _node_from_parsed(parsed)
@@ -131,7 +159,11 @@ def build_graph_document(
     for parsed in parsed_files:
         for imported in parsed.imports:
             target = resolve_import(
-                project_root, parsed.file.path, imported, parsed_by_path
+                project_root,
+                parsed.file.path,
+                imported,
+                parsed_by_path,
+                resolution,
             )
             if target is None:
                 target = f"unresolved:{imported.module}"
@@ -142,9 +174,12 @@ def build_graph_document(
                 )
                 is_local_import = is_supported_relative or (
                     not imported.module.startswith(".")
-                    and any(
-                        bool(part) and (project_root / part).exists()
-                        for part in imported.module.split(".")[:1]
+                    and (
+                        resolution.matches(imported.module)
+                        or any(
+                            bool(part) and (project_root / part).exists()
+                            for part in imported.module.split(".")[:1]
+                        )
                     )
                 )
                 if target not in nodes:
@@ -211,6 +246,8 @@ def build_graph_document(
             for link in links
         )
 
+    _tag_cycle_membership(nodes, links)
+
     languages = tuple(
         sorted({item.file.language for item in parsed_files})
     )
@@ -231,11 +268,45 @@ def build_graph_document(
     )
 
 
+def _tag_cycle_membership(
+    nodes: dict[str, GraphNode], links: list[GraphLink]
+) -> None:
+    cycle_graph = nx.DiGraph()
+    cycle_graph.add_nodes_from(
+        node_id for node_id, node in nodes.items() if node.type != "unknown"
+    )
+    cycle_graph.add_edges_from(
+        (link.source, link.target)
+        for link in links
+        if link.status == "healthy"
+        and link.source in nodes
+        and link.target in nodes
+        and nodes[link.source].type != "unknown"
+        and nodes[link.target].type != "unknown"
+    )
+    components = sorted(
+        (
+            tuple(sorted(component))
+            for component in nx.strongly_connected_components(cycle_graph)
+            if len(component) > 1
+        ),
+        key=lambda item: item,
+    )
+    for index, component in enumerate(components):
+        for node_id in component:
+            node = nodes.get(node_id)
+            if node is None:
+                continue
+            node.in_cycle = True
+            node.cycle_id = index
+
+
 def resolve_import(
     project_root: Path,
     source_path: str,
     imported: ImportRecord,
     parsed_by_path: dict[str, ParsedFile],
+    resolution: "ResolutionConfig | None" = None,
 ) -> str | None:
     module = imported.module
     source = Path(source_path)
@@ -252,6 +323,7 @@ def resolve_import(
         else:
             module_path = Path(module.replace(".", "/"))
             candidates.append(module_path)
+            candidates.append(Path("src") / module_path)
             source_parent = source.parent
             for ancestor in [source_parent, *source_parent.parents]:
                 if ancestor == Path("."):
@@ -262,14 +334,27 @@ def resolve_import(
         candidates.append(source.parent / module)
         extensions = (".ts", ".tsx", ".js", ".jsx")
     else:
-        return None
+        extensions = (".ts", ".tsx", ".js", ".jsx")
+        if resolution is not None:
+            candidates.extend(resolution.candidates(module))
+        candidates.append(Path(module))
 
     for candidate in candidates:
         normalized = Path(*candidate.parts)
-        candidate_strings = [
-            normalized.with_suffix(extension).as_posix()
-            for extension in extensions
-        ]
+        candidate_strings: list[str] = []
+        if normalized.suffix in extensions:
+            candidate_strings.append(normalized.as_posix())
+            if normalized.suffix in {".js", ".jsx"}:
+                without_suffix = normalized.with_suffix("")
+                candidate_strings.extend(
+                    without_suffix.with_suffix(extension).as_posix()
+                    for extension in extensions
+                )
+        else:
+            candidate_strings.extend(
+                f"{normalized.as_posix()}{extension}"
+                for extension in extensions
+            )
         candidate_strings.extend(
             (normalized / f"index{extension}").as_posix()
             for extension in extensions
@@ -297,11 +382,248 @@ def _missing_imported_symbols(
     if not imported.symbols:
         return ()
     target_exports = set(target.exports)
-    if source.language != "python" and "default" in target_exports:
-        return ()
     return tuple(
         symbol for symbol in imported.symbols if symbol not in target_exports
     )
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspacePackage:
+    name: str
+    directory: str
+    entries: tuple[str, ...]
+
+    def matches(self, module: str) -> bool:
+        return module == self.name or module.startswith(f"{self.name}/")
+
+    def candidates(self, module: str) -> list[Path]:
+        if module == self.name:
+            result = [Path(entry) for entry in self.entries]
+            result.append(Path(self.directory))
+            result.append(Path(self.directory) / "src")
+            return result
+        prefix = f"{self.name}/"
+        if module.startswith(prefix):
+            return [Path(self.directory) / module[len(prefix) :]]
+        return []
+
+
+@dataclass(frozen=True, slots=True)
+class ResolutionConfig:
+    base_url: Path
+    paths: tuple[tuple[str, tuple[str, ...]], ...]
+    workspaces: tuple[WorkspacePackage, ...] = ()
+
+    def matches(self, module: str) -> bool:
+        # Workspace packages are intentionally excluded here: when their source
+        # entry cannot be resolved we keep them as external rather than emitting
+        # a false broken-import warning.
+        return any(_path_pattern_matches(pattern, module) for pattern, _ in self.paths)
+
+    def candidates(self, module: str) -> list[Path]:
+        candidates: list[Path] = []
+        for pattern, replacements in self.paths:
+            if "*" in pattern:
+                prefix, suffix = pattern.split("*", 1)
+                if not module.startswith(prefix) or not module.endswith(suffix):
+                    continue
+                wildcard = module[len(prefix) : len(module) - len(suffix) or None]
+            elif module == pattern:
+                wildcard = ""
+            else:
+                continue
+            for replacement in replacements:
+                candidates.append(
+                    self.base_url / replacement.replace("*", wildcard)
+                )
+        for package in self.workspaces:
+            candidates.extend(package.candidates(module))
+        if self.base_url != Path("."):
+            candidates.append(self.base_url / module)
+        return candidates
+
+
+def _path_pattern_matches(pattern: str, module: str) -> bool:
+    if "*" not in pattern:
+        return module == pattern
+    prefix, suffix = pattern.split("*", 1)
+    return module.startswith(prefix) and module.endswith(suffix)
+
+
+def load_resolution_config(project_root: Path) -> ResolutionConfig:
+    base_url = Path(".")
+    paths: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    for filename in ("tsconfig.json", "jsconfig.json"):
+        path = project_root / filename
+        if not path.is_file():
+            continue
+        try:
+            raw = path.read_text(encoding="utf-8")
+            raw = _strip_json_comments(raw)
+            raw = _strip_trailing_commas(raw)
+            compiler_options = json.loads(raw).get("compilerOptions", {})
+            base_url = Path(compiler_options.get("baseUrl", "."))
+            paths = tuple(
+                (pattern, tuple(replacements))
+                for pattern, replacements in compiler_options.get(
+                    "paths", {}
+                ).items()
+                if isinstance(pattern, str)
+                and isinstance(replacements, list)
+                and all(isinstance(item, str) for item in replacements)
+            )
+        except (OSError, ValueError, TypeError):
+            base_url, paths = Path("."), ()
+        break
+    return ResolutionConfig(base_url, paths, _load_workspaces(project_root))
+
+
+def _load_workspaces(project_root: Path) -> tuple[WorkspacePackage, ...]:
+    manifest = project_root / "package.json"
+    if not manifest.is_file():
+        return ()
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    workspaces = data.get("workspaces")
+    patterns: list[str] = []
+    if isinstance(workspaces, list):
+        patterns = [item for item in workspaces if isinstance(item, str)]
+    elif isinstance(workspaces, dict):
+        declared = workspaces.get("packages")
+        if isinstance(declared, list):
+            patterns = [item for item in declared if isinstance(item, str)]
+    packages: list[WorkspacePackage] = []
+    for pattern in patterns:
+        for directory in sorted(project_root.glob(pattern)):
+            if not directory.is_dir():
+                continue
+            package = _read_workspace_package(project_root, directory)
+            if package is not None:
+                packages.append(package)
+    return tuple(packages)
+
+
+def _read_workspace_package(
+    project_root: Path, directory: Path
+) -> WorkspacePackage | None:
+    manifest = directory / "package.json"
+    if not manifest.is_file():
+        return None
+    try:
+        meta = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    name = meta.get("name")
+    if not isinstance(name, str) or not name:
+        return None
+    relative_directory = directory.relative_to(project_root).as_posix()
+    return WorkspacePackage(
+        name=name,
+        directory=relative_directory,
+        entries=_entry_strings(meta, relative_directory),
+    )
+
+
+def _entry_strings(meta: dict[str, Any], directory: str) -> tuple[str, ...]:
+    values: list[str] = []
+    for key in ("main", "module"):
+        value = meta.get(key)
+        if isinstance(value, str):
+            values.append(value)
+    values.extend(_exports_strings(meta.get("exports")))
+    entries: list[str] = []
+    for value in values:
+        cleaned = value.lstrip("./")
+        if cleaned:
+            entries.append(f"{directory}/{cleaned}")
+    return tuple(dict.fromkeys(entries))
+
+
+def _exports_strings(exports: Any) -> list[str]:
+    if isinstance(exports, str):
+        return [exports]
+    if isinstance(exports, dict):
+        dot = exports.get(".")
+        if isinstance(dot, str):
+            return [dot]
+        if isinstance(dot, dict):
+            return [value for value in dot.values() if isinstance(value, str)]
+    return []
+
+
+def _strip_json_comments(value: str) -> str:
+    result: list[str] = []
+    index = 0
+    in_string = False
+    escaped = False
+    while index < len(value):
+        character = value[index]
+        next_character = value[index + 1] if index + 1 < len(value) else ""
+        if in_string:
+            result.append(character)
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            index += 1
+            continue
+        if character == '"':
+            in_string = True
+            result.append(character)
+            index += 1
+            continue
+        if character == "/" and next_character == "/":
+            index += 2
+            while index < len(value) and value[index] not in "\r\n":
+                index += 1
+            continue
+        if character == "/" and next_character == "*":
+            index += 2
+            while index + 1 < len(value) and value[index : index + 2] != "*/":
+                index += 1
+            index += 2
+            continue
+        result.append(character)
+        index += 1
+    return "".join(result)
+
+
+def _strip_trailing_commas(value: str) -> str:
+    result: list[str] = []
+    in_string = False
+    escaped = False
+    index = 0
+    while index < len(value):
+        character = value[index]
+        if in_string:
+            result.append(character)
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+            index += 1
+            continue
+        if character == '"':
+            in_string = True
+            result.append(character)
+            index += 1
+            continue
+        if character == ",":
+            cursor = index + 1
+            while cursor < len(value) and value[cursor].isspace():
+                cursor += 1
+            if cursor < len(value) and value[cursor] in "}]":
+                index += 1
+                continue
+        result.append(character)
+        index += 1
+    return "".join(result)
 
 
 def _node_from_parsed(parsed: ParsedFile) -> GraphNode:

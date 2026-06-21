@@ -12,11 +12,12 @@ import ForceGraph2D, {
 import { forceCollide, forceRadial } from "d3-force-3d";
 
 import {
+  cycleLinkKeys,
   highlightFor,
   linkKey,
   neighborsFor,
 } from "../graph/transforms";
-import { nodeRadius, shouldShowNodeLabel } from "../graph/visuals";
+import { CYCLE_COLOR, nodeRadius, shouldShowNodeLabel } from "../graph/visuals";
 import type { GraphLink, GraphNode } from "../types/graph";
 
 const GROUP_COLORS: Record<string, string> = {
@@ -50,11 +51,16 @@ export function GraphCanvas({
   const graphRef = useRef<
     ForceGraphMethods<GraphNode, GraphLink> | undefined
   >(undefined);
+  const hasAutoFitRef = useRef(false);
   const [size, setSize] = useState({ width: 800, height: 600 });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const highlights = useMemo(
     () => highlightFor(hoveredId, links),
     [hoveredId, links],
+  );
+  const cycleKeys = useMemo(
+    () => cycleLinkKeys(nodes, links),
+    [nodes, links],
   );
   const hoverActive = hoveredId !== null;
 
@@ -165,6 +171,16 @@ export function GraphCanvas({
         context.stroke();
       }
 
+      if (node.inCycle && !dimmed) {
+        context.beginPath();
+        context.arc(x, y, radius + 1.8 / globalScale, 0, Math.PI * 2);
+        context.lineWidth = 1.6 / globalScale;
+        context.setLineDash([3 / globalScale, 2 / globalScale]);
+        context.strokeStyle = CYCLE_COLOR;
+        context.stroke();
+        context.setLineDash([]);
+      }
+
       if (!shouldShowNodeLabel(globalScale, emphasized)) return;
 
       const label = node.label;
@@ -204,6 +220,10 @@ export function GraphCanvas({
     ],
   );
 
+  const resetView = useCallback(() => {
+    graphRef.current?.zoomToFit(400, 40);
+  }, []);
+
   const paintPointer = useCallback(
     (
       node: NodeObject<GraphNode>,
@@ -220,8 +240,21 @@ export function GraphCanvas({
     [],
   );
 
+  const hasCycle = useMemo(() => nodes.some((node) => node.inCycle), [nodes]);
+
   return (
     <div className="graph-canvas" ref={containerRef}>
+      <div className="graph-overlay">
+        <button
+          className="graph-reset"
+          onClick={resetView}
+          title="Fit the whole graph into view"
+          type="button"
+        >
+          Reset view
+        </button>
+        <GraphLegend hasCycle={hasCycle} />
+      </div>
       <ForceGraph2D<GraphNode, GraphLink>
         backgroundColor="#101416"
         cooldownTicks={180}
@@ -238,7 +271,9 @@ export function GraphCanvas({
               : "rgba(255,255,255,0.035)"
             : !["healthy", "external"].includes(link.status)
               ? "#c5695f"
-              : "#424a4e"
+              : cycleKeys.has(linkKey(link))
+                ? CYCLE_COLOR
+                : "#424a4e"
         }
         linkDirectionalArrowColor={(link) =>
           hoverActive
@@ -247,7 +282,9 @@ export function GraphCanvas({
               : "rgba(255,255,255,0.025)"
             : !["healthy", "external"].includes(link.status)
               ? "#c5695f"
-              : "#596267"
+              : cycleKeys.has(linkKey(link))
+                ? CYCLE_COLOR
+                : "#596267"
         }
         linkDirectionalArrowLength={2.4}
         linkDirectionalArrowRelPos={0.85}
@@ -258,12 +295,21 @@ export function GraphCanvas({
               : 0.35
             : !["healthy", "external"].includes(link.status)
               ? 1.2
-              : 0.8
+              : cycleKeys.has(linkKey(link))
+                ? 1.3
+                : 0.8
         }
         nodeCanvasObject={drawNode}
         nodeLabel=""
         nodePointerAreaPaint={paintPointer}
-        onEngineStop={() => graphRef.current?.zoomToFit(350, 30)}
+        onEngineStop={() => {
+          // Auto-fit only on the first settle so later simulation passes
+          // (drag, rescan, file changes) never fight the user's chosen view.
+          if (!hasAutoFitRef.current) {
+            hasAutoFitRef.current = true;
+            graphRef.current?.zoomToFit(350, 30);
+          }
+        }}
         onNodeClick={(node, event) => {
           onSelectNode(node);
           if (event.detail >= 2) {
@@ -281,5 +327,50 @@ export function GraphCanvas({
         width={size.width}
       />
     </div>
+  );
+}
+
+const LEGEND_GROUPS: Array<[string, string]> = [
+  ["frontend", "Frontend"],
+  ["backend", "Backend"],
+  ["agent", "Agent"],
+  ["test", "Test"],
+  ["config", "Config"],
+  ["external", "External"],
+];
+
+function GraphLegend({ hasCycle }: { hasCycle: boolean }) {
+  return (
+    <details className="graph-legend">
+      <summary>Legend</summary>
+      <ul>
+        {LEGEND_GROUPS.map(([group, label]) => (
+          <li key={group}>
+            <span
+              className="legend-swatch"
+              style={{ background: GROUP_COLORS[group] }}
+            />
+            {label}
+          </li>
+        ))}
+        <li>
+          <span className="legend-swatch" style={{ background: "#e56f61" }} />
+          Has warning
+        </li>
+        <li>
+          <span className="legend-swatch legend-swatch--broken" />
+          Broken edge
+        </li>
+        {hasCycle ? (
+          <li>
+            <span
+              className="legend-swatch legend-swatch--cycle"
+              style={{ borderColor: CYCLE_COLOR }}
+            />
+            In cycle
+          </li>
+        ) : null}
+      </ul>
+    </details>
   );
 }
